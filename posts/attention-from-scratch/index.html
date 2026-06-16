@@ -225,19 +225,20 @@ window.Quarto = {
 </figure>
 </div>
 <p>We now have a set of <span class="math inline">\(N\)</span> vectors:</p>
-<p><span class="math display">\[\{\vec{x}_1, \vec{x}_2, \ldots, \vec{x}_N\}, \quad \vec{x}_i \in \mathbb{R}^D\]</span></p>
-<p>Think of each <span class="math inline">\(\vec{x}_i\)</span> as one patch. <span class="math inline">\(N\)</span> is the number of patches. <span class="math inline">\(D\)</span> is the dimension of each patch vector — <span class="math inline">\(768\)</span> in the example above.</p>
+<p><span class="math display">\[\{\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_N\}, \quad \mathbf{x}_i \in \mathbb{R}^D\]</span></p>
+<p>Think of each <span class="math inline">\(\mathbf{x}_i\)</span> as one patch. <span class="math inline">\(N\)</span> is the number of patches. <span class="math inline">\(D\)</span> is the dimension of each patch vector — <span class="math inline">\(768\)</span> in the example above.</p>
 <p>We can stack these into a matrix:</p>
-<p><span class="math display">\[X = \begin{bmatrix} — &amp; \vec{x}_1^T &amp; — \\ — &amp; \vec{x}_2^T &amp; — \\
-&amp; \vdots &amp; \\ — &amp; \vec{x}_N^T &amp; — \end{bmatrix} \in \mathbb{R}^{N \times D}\]</span></p>
+<p><span class="math display">\[X = \begin{bmatrix} — &amp; \mathbf{x}_1^T &amp; — \\ — &amp; \mathbf{x}_2^T &amp; — \\
+&amp; \vdots &amp; \\ — &amp; \mathbf{x}_N^T &amp; — \end{bmatrix} \in \mathbb{R}^{N \times D}\]</span></p>
 <p>Each row is one patch. <span class="math inline">\(X\)</span> is our data matrix — <span class="math inline">\(N\)</span> patches, each with <span class="math inline">\(D\)</span> features.</p>
-<p>Now, the raw patch vectors <span class="math inline">\(\vec{x}_i\)</span> are just pixel values — low-level information. They have no awareness of the rest of the image. Patch 47 does not know what patch 48 looks like, or patch 12, or patch 196.</p>
+<p><strong>A note on notation.</strong> Vectors are always column vectors. <span class="math inline">\(\mathbf{x}_i \in \mathbb{R}^D\)</span> means a column vector with <span class="math inline">\(D\)</span> entries — a <span class="math inline">\(D \times 1\)</span> matrix. When we write <span class="math inline">\(\mathbf{x}_i^T\)</span>, we are transposing it into a row vector — a <span class="math inline">\(1 \times D\)</span> matrix. This is why the data matrix <span class="math inline">\(X\)</span> is built by stacking transposes: each <em>row</em> of <span class="math inline">\(X\)</span> is one patch vector laid on its side, giving <span class="math inline">\(N\)</span> rows and <span class="math inline">\(D\)</span> columns. Throughout this post, matrix-vector multiplication follows the standard convention — if <span class="math inline">\(A \in \mathbb{R}^{m \times n}\)</span> and <span class="math inline">\(\mathbf{x} \in \mathbb{R}^n\)</span>, then <span class="math inline">\(A\mathbf{x} \in \mathbb{R}^m\)</span>. Dimensions will be tracked at every step.</p>
+<p>Now, the raw patch vectors <span class="math inline">\(\mathbf{x}_i\)</span> are just pixel values — low-level information. They have no awareness of the rest of the image. Patch 47 does not know what patch 48 looks like, or patch 12, or patch 196.</p>
 <p>What we want is a new set of vectors:</p>
-<p><span class="math display">\[\{\vec{y}_1, \vec{y}_2, \ldots, \vec{y}_N\}, \quad \vec{y}_i \in \mathbb{R}^D\]</span></p>
-<p>where <span class="math inline">\(\vec{y}_n\)</span> is a <em>richer</em> version of <span class="math inline">\(\vec{x}_n\)</span> — one that has looked around at the other patches and incorporated relevant information from them. The output matrix:</p>
-<p><span class="math display">\[Y = \begin{bmatrix} — &amp; \vec{y}_1^T &amp; — \\ — &amp; \vec{y}_2^T &amp; — \\
-&amp; \vdots &amp; \\ — &amp; \vec{y}_N^T &amp; — \end{bmatrix} \in \mathbb{R}^{N \times D}\]</span></p>
-<p>has the same shape as <span class="math inline">\(X\)</span>. Same number of patches, same dimension. But the representations are no longer context-free — each <span class="math inline">\(\vec{y}_n\)</span> has been informed by the whole image.</p>
+<p><span class="math display">\[\{\mathbf{y}_1, \mathbf{y}_2, \ldots, \mathbf{y}_N\}, \quad \mathbf{y}_i \in \mathbb{R}^D\]</span></p>
+<p>where <span class="math inline">\(\mathbf{y}_n\)</span> is a <em>richer</em> version of <span class="math inline">\(\mathbf{x}_n\)</span> — one that has looked around at the other patches and incorporated relevant information from them. The output matrix:</p>
+<p><span class="math display">\[Y = \begin{bmatrix} — &amp; \mathbf{y}_1^T &amp; — \\ — &amp; \mathbf{y}_2^T &amp; — \\
+&amp; \vdots &amp; \\ — &amp; \mathbf{y}_N^T &amp; — \end{bmatrix} \in \mathbb{R}^{N \times D}\]</span></p>
+<p>has the same shape as <span class="math inline">\(X\)</span>. Same number of patches, same dimension. But the representations are no longer context-free — each <span class="math inline">\(\mathbf{y}_n\)</span> has been informed by the whole image.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="images/attention_intuition.png" class="img-fluid figure-img"></p>
@@ -252,7 +253,8 @@ window.Quarto = {
 <i class="callout-icon no-icon"></i>
 </div>
 <div class="callout-body-container">
-<p>A transformer does not obtain context from nowhere. It computes <span class="math inline">\(\vec{y}_n\)</span> as a weighted sum of all the input vectors <span class="math inline">\(\vec{x}_1, \ldots, \vec{x}_N\)</span>. The weights determine how much each patch contributes to the representation of patch <span class="math inline">\(n\)</span>. Computing those weights intelligently — that is the attention mechanism.</p>
+<p>A transformer does not obtain context from nowhere. It computes <span class="math inline">\(\mathbf{y}_n\)</span> as a weighted sum of all the input vectors <span class="math inline">\(\mathbf{x}_1, \ldots, \mathbf{x}_N\)</span>. The weights determine how much each patch contributes to the representation of patch <span class="math inline">\(n\)</span>. Computing those weights intelligently — that is the attention mechanism.</p>
+<p>For now, we treat this as a weighted sum of raw input vectors. When we introduce queries, keys and values in the next post, the weights will be applied to <em>projections</em> of the inputs — not the raw vectors themselves. The intuition is identical.</p>
 </div>
 </div>
 </div>
