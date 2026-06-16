@@ -143,7 +143,7 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#what-does-a-pixel-mean-without-its-neighbours" id="toc-what-does-a-pixel-mean-without-its-neighbours" class="nav-link active" data-scroll-target="#what-does-a-pixel-mean-without-its-neighbours">What Does a Pixel Mean Without Its Neighbours?</a></li>
+  <li><a href="#what-does-a-pixel-mean-without-its-neighbors" id="toc-what-does-a-pixel-mean-without-its-neighbors" class="nav-link active" data-scroll-target="#what-does-a-pixel-mean-without-its-neighbors">What Does a Pixel Mean Without Its Neighbors?</a></li>
   <li><a href="#setting-the-scene" id="toc-setting-the-scene" class="nav-link" data-scroll-target="#setting-the-scene">Setting the Scene</a></li>
   </ul>
 </nav>
@@ -189,19 +189,18 @@ window.Quarto = {
 </header>
 
 
-<section id="what-does-a-pixel-mean-without-its-neighbours" class="level2">
-<h2 class="anchored" data-anchor-id="what-does-a-pixel-mean-without-its-neighbours">What Does a Pixel Mean Without Its Neighbours?</h2>
-<p>A satellite image is a matrix of numbers. Pick any pixel — say, position <span class="math inline">\((100, 100)\)</span>. Its value is <span class="math inline">\(142\)</span>. What does that mean?</p>
+<section id="what-does-a-pixel-mean-without-its-neighbors" class="level2">
+<h2 class="anchored" data-anchor-id="what-does-a-pixel-mean-without-its-neighbors">What Does a Pixel Mean Without Its Neighbors?</h2>
 <p>Any digital image is just a matrix of numbers. Consider a satellite image of a region. Pick any pixel- say, position <span class="math inline">\((100, 100)\)</span>. Its value is <span class="math inline">\(142\)</span>. What does it mean? Is it a road? A river? A rooftop?</p>
-<p>You cannot tell from a single number. The pixel at <span class="math inline">\((100, 100)\)</span> only means something in relation to its neighbours — <span class="math inline">\((99, 100)\)</span>, <span class="math inline">\((101, 100)\)</span>, <span class="math inline">\((100, 99)\)</span>. The number <span class="math inline">\(142\)</span> is not information. The <em>relationship</em> between <span class="math inline">\(142\)</span> and its neighbours — that is information.</p>
+<p>You cannot tell from a single number. The pixel at <span class="math inline">\((100, 100)\)</span> only means something in relation to its neighbors — <span class="math inline">\((99, 100)\)</span>, <span class="math inline">\((101, 100)\)</span>, <span class="math inline">\((100, 99)\)</span>. The number <span class="math inline">\(142\)</span> is not information. The <em>relationship</em> between <span class="math inline">\(142\)</span> and its neighbors — that is information.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="images/satellite_image.png" class="img-fluid figure-img"></p>
 <figcaption>A satellite image — the pixel at (100,100) is marked. Without context, it means nothing.</figcaption>
 </figure>
 </div>
-<p>This is not just a quirk of satellite imagery. It is true for any kind of image. A single pixel value, say, a patch of skin tone near your cheek alone tells you nothing. What tells you something is the <em>neighborhood</em>- the eye above it, the jaw below it and the ear to its side. The pixel derives its meaning from what surrounds it.</p>
-<p>Now zoom out. This is not even specific to images. A word in a sentence works the same way. “Bank” means something completely different depending on whether its neighbours are “river” and “fish” or “loan” and “interest rate.” But we will not go there — this book stays in vision, and images are already rich enough to make the point.</p>
+<p>This is not just a quirk of satellite imagery. It is true for any kind of image. A single pixel value, say, a patch of skin tone near your cheek alone tells you nothing. What tells you something is the <em>neighborhood</em> the eye above it, the jaw below it and the ear to its side. The pixel derives its meaning from what surrounds it.</p>
+<p>Now zoom out. This is not even specific to images. A word in a sentence works the same way. “Bank” means something completely different depending on whether its neighbors are “river” and “fish” or “loan” and “interest rate.” But we will not go there — this post stays in vision, and images are already rich enough to make the point.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="images/pixel_context.png" class="img-fluid figure-img"></p>
@@ -222,7 +221,7 @@ window.Quarto = {
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="images/patch_grid.png" class="img-fluid figure-img"></p>
-<figcaption>An image divided into a grid of patches. Each patch becomes a vector. The grid here is <span class="math inline">\(16 \times 16\)</span>, giving 196 patches total.</figcaption>
+<figcaption>An image divided into a grid of patches. Each patch becomes a vector. The grid here is <span class="math inline">\(14 \times 14\)</span>, giving 196 patches total.</figcaption>
 </figure>
 </div>
 <p>We now have a set of <span class="math inline">\(N\)</span> vectors:</p>
