@@ -6,10 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Madhav Prashanth Ramachandran">
-<meta name="dcterms.date" content="2026-06-16">
 
-<title>Attention From Scratch – Transformers and Perception</title>
+<title>index – Transformers and Perception</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -28,23 +26,23 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../../">
-<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../../site_libs/quarto-html/popper.min.js"></script>
-<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-a0f9fd0d421825b736dc1bbcbcba2219.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-a0f9fd0d421825b736dc1bbcbcba2219.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -73,37 +71,7 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
-
-<link rel="stylesheet" href="styles.css">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -113,7 +81,7 @@ window.Quarto = {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../index.html">
+    <a class="navbar-brand" href="../../../index.html">
     <span class="navbar-title">Transformers and Perception</span>
     </a>
   </div>
@@ -124,7 +92,7 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../../posts/index.qmd"> 
+    <a class="nav-link" href="../../../posts/index.qmd"> 
 <span class="menu-text">Posts</span></a>
   </li>  
 </ul>
@@ -138,129 +106,17 @@ window.Quarto = {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#what-does-a-pixel-mean-without-its-neighbours" id="toc-what-does-a-pixel-mean-without-its-neighbours" class="nav-link active" data-scroll-target="#what-does-a-pixel-mean-without-its-neighbours">What Does a Pixel Mean Without Its Neighbours?</a></li>
-  <li><a href="#setting-the-scene" id="toc-setting-the-scene" class="nav-link" data-scroll-target="#setting-the-scene">Setting the Scene</a></li>
-  </ul>
-</nav>
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+        
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
-
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">Attention From Scratch</h1>
-<p class="subtitle lead">What does a pixel mean without its neighbours?</p>
-  <div class="quarto-categories">
-    <div class="quarto-category">transformers</div>
-    <div class="quarto-category">vision</div>
-    <div class="quarto-category">attention</div>
-    <div class="quarto-category">mathematics</div>
-  </div>
-  </div>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
 
 
 
-<div class="quarto-title-meta">
-
-    <div>
-    <div class="quarto-title-meta-heading">Author</div>
-    <div class="quarto-title-meta-contents">
-             <p>Madhav Prashanth Ramachandran </p>
-          </div>
-  </div>
-    
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">June 16, 2026</p>
-    </div>
-  </div>
-  
-    
-  </div>
-  
 
 
-</header>
 
-
-<section id="what-does-a-pixel-mean-without-its-neighbours" class="level2">
-<h2 class="anchored" data-anchor-id="what-does-a-pixel-mean-without-its-neighbours">What Does a Pixel Mean Without Its Neighbours?</h2>
-<p>A satellite image is a matrix of numbers. Pick any pixel — say, position <span class="math inline">\((100, 100)\)</span>. Its value is <span class="math inline">\(142\)</span>. What does that mean?</p>
-<p>Any digital image is just a matrix of numbers. Consider a satellite image of a region. Pick any pixel- say, position <span class="math inline">\((100, 100)\)</span>. Its value is <span class="math inline">\(142\)</span>. What does it mean? Is it a road? A river? A rooftop?</p>
-<p>You cannot tell from a single number. The pixel at <span class="math inline">\((100, 100)\)</span> only means something in relation to its neighbours — <span class="math inline">\((99, 100)\)</span>, <span class="math inline">\((101, 100)\)</span>, <span class="math inline">\((100, 99)\)</span>. The number <span class="math inline">\(142\)</span> is not information. The <em>relationship</em> between <span class="math inline">\(142\)</span> and its neighbours — that is information.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/satellite_image.png" class="img-fluid figure-img"></p>
-<figcaption>A satellite image — the pixel at (100,100) is marked. Without context, it means nothing.</figcaption>
-</figure>
-</div>
-<p>This is not just a quirk of satellite imagery. It is true for any kind of image. A single pixel value, say, a patch of skin tone near your cheek alone tells you nothing. What tells you something is the <em>neighborhood</em>- the eye above it, the jaw below it and the ear to its side. The pixel derives its meaning from what surrounds it.</p>
-<p>Now zoom out. This is not even specific to images. A word in a sentence works the same way. “Bank” means something completely different depending on whether its neighbours are “river” and “fish” or “loan” and “interest rate.” But we will not go there — this book stays in vision, and images are already rich enough to make the point.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/pixel_context.png" class="img-fluid figure-img"></p>
-<figcaption>The same pixel value appearing in two completely different contexts — once on a road, once on a river. Same number, different meaning.</figcaption>
-</figure>
-</div>
-<p>So here is the question this post is really asking:</p>
-<blockquote class="blockquote">
-<p><strong>How do we build a representation of a patch of an image that is informed by all the other patches?</strong></p>
-</blockquote>
-<p>Not a fixed representation. But something that is <em>context-dependent</em>- one that changes based on the neighborhood, the way a pixel’s meaning changes based on what surrounds it.</p>
-<p>This is what attention does. And it turns out the path to attention runs through a surprisingly classical idea — the notion of <strong>similarity</strong> between vectors, and specifically, what it means to measure similarity <em>well</em>.</p>
-<p>But before we get to the math, let us set the scene properly.</p>
-</section>
-<section id="setting-the-scene" class="level2">
-<h2 class="anchored" data-anchor-id="setting-the-scene">Setting the Scene</h2>
-<p>Suppose we have an image. We divide it into a grid of non-overlapping patches — say, <span class="math inline">\(16 \times 16\)</span> pixel blocks. Each patch is flattened into a vector. For a colour image with 3 channels, a <span class="math inline">\(16 \times 16\)</span> patch gives a vector of <span class="math inline">\(16 \times 16 \times 3 = 768\)</span> numbers.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/patch_grid.png" class="img-fluid figure-img"></p>
-<figcaption>An image divided into a grid of patches. Each patch becomes a vector. The grid here is <span class="math inline">\(16 \times 16\)</span>, giving 196 patches total.</figcaption>
-</figure>
-</div>
-<p>We now have a set of <span class="math inline">\(N\)</span> vectors:</p>
-<p><span class="math display">\[\{\vec{x}_1, \vec{x}_2, \ldots, \vec{x}_N\}, \quad \vec{x}_i \in \mathbb{R}^D\]</span></p>
-<p>Think of each <span class="math inline">\(\vec{x}_i\)</span> as one patch. <span class="math inline">\(N\)</span> is the number of patches. <span class="math inline">\(D\)</span> is the dimension of each patch vector — <span class="math inline">\(768\)</span> in the example above.</p>
-<p>We can stack these into a matrix:</p>
-<p><span class="math display">\[X = \begin{bmatrix} — &amp; \vec{x}_1^T &amp; — \\ — &amp; \vec{x}_2^T &amp; — \\
-&amp; \vdots &amp; \\ — &amp; \vec{x}_N^T &amp; — \end{bmatrix} \in \mathbb{R}^{N \times D}\]</span></p>
-<p>Each row is one patch. <span class="math inline">\(X\)</span> is our data matrix — <span class="math inline">\(N\)</span> patches, each with <span class="math inline">\(D\)</span> features.</p>
-<p>Now, the raw patch vectors <span class="math inline">\(\vec{x}_i\)</span> are just pixel values — low-level information. They have no awareness of the rest of the image. Patch 47 does not know what patch 48 looks like, or patch 12, or patch 196.</p>
-<p>What we want is a new set of vectors:</p>
-<p><span class="math display">\[\{\vec{y}_1, \vec{y}_2, \ldots, \vec{y}_N\}, \quad \vec{y}_i \in \mathbb{R}^D\]</span></p>
-<p>where <span class="math inline">\(\vec{y}_n\)</span> is a <em>richer</em> version of <span class="math inline">\(\vec{x}_n\)</span> — one that has looked around at the other patches and incorporated relevant information from them. The output matrix:</p>
-<p><span class="math display">\[Y = \begin{bmatrix} — &amp; \vec{y}_1^T &amp; — \\ — &amp; \vec{y}_2^T &amp; — \\
-&amp; \vdots &amp; \\ — &amp; \vec{y}_N^T &amp; — \end{bmatrix} \in \mathbb{R}^{N \times D}\]</span></p>
-<p>has the same shape as <span class="math inline">\(X\)</span>. Same number of patches, same dimension. But the representations are no longer context-free — each <span class="math inline">\(\vec{y}_n\)</span> has been informed by the whole image.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/attention_intuition.png" class="img-fluid figure-img"></p>
-<figcaption>Input patches <span class="math inline">\(X\)</span> on the left — each patch is isolated. Output representations <span class="math inline">\(Y\)</span> on the right — each patch now carries information from the others. The arrows suggest which patches informed which.</figcaption>
-</figure>
-</div>
-<p>This transformation — from <span class="math inline">\(X\)</span> to <span class="math inline">\(Y\)</span>, from isolated patches to context-aware representations — is what a transformer layer does.</p>
-<p>The question is how. And the answer starts with a deceptively simple idea: <strong>weighted averaging</strong>.</p>
-<div class="callout callout-style-simple callout-note no-icon">
-<div class="callout-body d-flex">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-body-container">
-<p>A transformer does not obtain context from nowhere. It computes <span class="math inline">\(\vec{y}_n\)</span> as a weighted sum of all the input vectors <span class="math inline">\(\vec{x}_1, \ldots, \vec{x}_N\)</span>. The weights determine how much each patch contributes to the representation of patch <span class="math inline">\(n\)</span>. Computing those weights intelligently — that is the attention mechanism.</p>
-</div>
-</div>
-</div>
-<p>In the next section, we ask: what should those weights look like? And that question leads us directly to the mathematics of similarity.</p>
-
-
-</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
