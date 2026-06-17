@@ -151,10 +151,13 @@ window.Quarto = {
   <li><a href="#the-dot-product-reconsidered" id="toc-the-dot-product-reconsidered" class="nav-link" data-scroll-target="#the-dot-product-reconsidered"><span class="header-section-number">3.2</span> The Dot Product, Reconsidered</a></li>
   <li><a href="#a-short-necessary-detour-through-linear-algebra" id="toc-a-short-necessary-detour-through-linear-algebra" class="nav-link" data-scroll-target="#a-short-necessary-detour-through-linear-algebra"><span class="header-section-number">3.3</span> A Short, Necessary Detour Through Linear Algebra</a></li>
   <li><a href="#enter-whitening-and-mahalanobis" id="toc-enter-whitening-and-mahalanobis" class="nav-link" data-scroll-target="#enter-whitening-and-mahalanobis"><span class="header-section-number">3.4</span> Enter Whitening — and Mahalanobis</a></li>
-  <li><a href="#a-wishlist" id="toc-a-wishlist" class="nav-link" data-scroll-target="#a-wishlist"><span class="header-section-number">3.5</span> A Wishlist</a></li>
-  <li><a href="#why-two-matrices-not-one" id="toc-why-two-matrices-not-one" class="nav-link" data-scroll-target="#why-two-matrices-not-one"><span class="header-section-number">3.6</span> Why Two Matrices, Not One?</a></li>
-  <li><a href="#from-a-score-to-a-weight" id="toc-from-a-score-to-a-weight" class="nav-link" data-scroll-target="#from-a-score-to-a-weight"><span class="header-section-number">3.7</span> From a Score to a Weight</a></li>
-  <li><a href="#whats-still-missing" id="toc-whats-still-missing" class="nav-link" data-scroll-target="#whats-still-missing"><span class="header-section-number">3.8</span> What’s Still Missing</a></li>
+  </ul></li>
+  <li><a href="#what-if-the-matrix-werent-fixed" id="toc-what-if-the-matrix-werent-fixed" class="nav-link" data-scroll-target="#what-if-the-matrix-werent-fixed"><span class="header-section-number">4</span> What If the Matrix Weren’t Fixed?</a>
+  <ul class="collapse">
+  <li><a href="#a-wishlist" id="toc-a-wishlist" class="nav-link" data-scroll-target="#a-wishlist"><span class="header-section-number">4.1</span> A Wishlist</a></li>
+  <li><a href="#why-two-matrices-not-one" id="toc-why-two-matrices-not-one" class="nav-link" data-scroll-target="#why-two-matrices-not-one"><span class="header-section-number">4.2</span> Why Two Matrices, Not One?</a></li>
+  <li><a href="#from-a-score-to-a-weight" id="toc-from-a-score-to-a-weight" class="nav-link" data-scroll-target="#from-a-score-to-a-weight"><span class="header-section-number">4.3</span> From a Score to a Weight</a></li>
+  <li><a href="#whats-still-missing" id="toc-whats-still-missing" class="nav-link" data-scroll-target="#whats-still-missing"><span class="header-section-number">4.4</span> What’s Still Missing</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -455,8 +458,12 @@ A\mathbf{X}_n\)</span> and <span class="math inline">\(\mathbf{Y}_m := A\mathbf{
 <p><span class="math display">\[d_M(\mathbf{x}_n, \mathbf{x}_m)^2 = (\mathbf{x}_n - \mathbf{x}_m)^T \, \Sigma^{-1} \, (\mathbf{x}_n - \mathbf{x}_m)\]</span></p>
 <p>Here is the question worth sitting with. As the formula is written, <span class="math inline">\(\Sigma^{-1}\)</span> is one fixed matrix, used identically no matter which two patches we plug in. But nothing about the <em>idea</em> of a matrix sitting between two vectors requires this. We could write down a more general version of this formula — one where the matrix in the middle is allowed to change depending on which two patches, within the same image, are actually being compared: different when comparing the patch containing a boat to the patch of water right next to it, than when comparing two patches that are both plain, empty sky.</p>
 </section>
-<section id="a-wishlist" class="level3" data-number="3.5">
-<h3 data-number="3.5" class="anchored" data-anchor-id="a-wishlist"><span class="header-section-number">3.5</span> A Wishlist</h3>
+</section>
+<section id="what-if-the-matrix-werent-fixed" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="what-if-the-matrix-werent-fixed"><span class="header-section-number">4</span> What If the Matrix Weren’t Fixed?</h2>
+<p>We spent the last section deriving the Mahalanobis distance from the whitening transformation. But <span class="math inline">\(\Sigma^{-1}\)</span> is still a fixed matrix: estimated once from the statistics of an entire dataset, then applied identically to every pair of patches we would ever compare. It is time to ask what happens when we let that go.</p>
+<section id="a-wishlist" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="a-wishlist"><span class="header-section-number">4.1</span> A Wishlist</h3>
 <p>Let’s ask the what-if question properly this time, with a wishlist in hand before we reach for any formula.</p>
 <p>We want a similarity score between two patches, <span class="math inline">\(\mathbf{x}_n\)</span> and <span class="math inline">\(\mathbf{x}_m\)</span>, that improves on Mahalanobis distance in one specific way: it should be allowed to depend on <em>which</em> patch is asking the question. Beyond that, here is what we want from it.</p>
 <ol type="1">
@@ -476,8 +483,8 @@ A\mathbf{X}_n\)</span> and <span class="math inline">\(\mathbf{Y}_m := A\mathbf{
 </ol>
 <p>With this wishlist in hand, a natural question arises before we even attempt a construction: could one matrix possibly satisfy all four? Specifically — item 2 demanded asymmetry. Can a single shared matrix, applied to both patches, ever give us that?</p>
 </section>
-<section id="why-two-matrices-not-one" class="level3" data-number="3.6">
-<h3 data-number="3.6" class="anchored" data-anchor-id="why-two-matrices-not-one"><span class="header-section-number">3.6</span> Why Two Matrices, Not One?</h3>
+<section id="why-two-matrices-not-one" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="why-two-matrices-not-one"><span class="header-section-number">4.2</span> Why Two Matrices, Not One?</h3>
 <p>It is worth checking this directly, because the answer is not obvious until you do the algebra. Suppose we tried a single shared matrix <span class="math inline">\(W\)</span>, applied to both patches:</p>
 <p><span class="math display">\[\mathbf{q}_n = W\mathbf{x}_n, \qquad \mathbf{k}_m = W\mathbf{x}_m,
 \qquad \text{score}(n,m) = \mathbf{x}_n^T W^TW \mathbf{x}_m\]</span></p>
@@ -494,8 +501,8 @@ A\mathbf{X}_n\)</span> and <span class="math inline">\(\mathbf{Y}_m := A\mathbf{
 \text{score}(m,n)\)</span>, in general — item 2, satisfied. It still comes from linear maps — <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> are both linear transformations — satisfying item 3. And it reduces to the plain inner product the moment <span class="math inline">\(W_Q = W_K = I\)</span> — item 4, satisfied.</p>
 <p><span class="math inline">\(\mathbf{q}_n\)</span> is called a <strong>query</strong> — what patch <span class="math inline">\(n\)</span> is asking about. <span class="math inline">\(\mathbf{k}_m\)</span> is called a <strong>key</strong> — what patch <span class="math inline">\(m\)</span> has to offer, as seen by anyone asking. We have, without quite announcing it, just written down the <span class="math inline">\(Q\)</span> and <span class="math inline">\(K\)</span> of self-attention.</p>
 </section>
-<section id="from-a-score-to-a-weight" class="level3" data-number="3.7">
-<h3 data-number="3.7" class="anchored" data-anchor-id="from-a-score-to-a-weight"><span class="header-section-number">3.7</span> From a Score to a Weight</h3>
+<section id="from-a-score-to-a-weight" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="from-a-score-to-a-weight"><span class="header-section-number">4.3</span> From a Score to a Weight</h3>
 <p>Remember where this entire post started. Back in “Setting the Scene,” we said <span class="math inline">\(\mathbf{y}_n\)</span> would be a weighted sum of the other patches:</p>
 <p><span class="math display">\[\mathbf{y}_n = \sum_{m=1}^N a_{nm}\,\mathbf{x}_m\]</span></p>
 <p>A score is not yet a weight. <span class="math inline">\(\text{score}(n,m) = \mathbf{q}_n^T\mathbf{k}_m\)</span> can be any real number — negative, larger than one, completely unconstrained. The weights <span class="math inline">\(a_{nm}\)</span>, on the other hand, were required from the very beginning to satisfy <span class="math inline">\(a_{nm} \geq 0\)</span> and <span class="math inline">\(\sum_m a_{nm} =
@@ -506,8 +513,8 @@ A\mathbf{X}_n\)</span> and <span class="math inline">\(\mathbf{Y}_m := A\mathbf{
 Plug those weights back into the formula we wrote at the very start.</p>
 <p><span class="math display">\[\mathbf{y}_n = \sum_{m=1}^N a_{nm}\,\mathbf{x}_m\]</span></p>
 </section>
-<section id="whats-still-missing" class="level3" data-number="3.8">
-<h3 data-number="3.8" class="anchored" data-anchor-id="whats-still-missing"><span class="header-section-number">3.8</span> What’s Still Missing</h3>
+<section id="whats-still-missing" class="level3" data-number="4.4">
+<h3 data-number="4.4" class="anchored" data-anchor-id="whats-still-missing"><span class="header-section-number">4.4</span> What’s Still Missing</h3>
 <p>This is close to self-attention, but not quite there yet. A few things are still missing, worth naming honestly rather than glossing over.</p>
 <ol type="1">
 <li><p><strong>The softmax mechanism, applied here, has not actually been shown.</strong> We have written down a similarity score, <span class="math inline">\(\text{score}(n,m) = \mathbf{q}_n^T\mathbf{k}_m\)</span>, and we have written down the softmax formula above — but the specific way these combine, including how the scores are scaled before the exponential, has not been derived. You already know softmax in general. This is a short step that will be taken later.</p></li>
@@ -531,6 +538,7 @@ W_V\mathbf{x}_m\)</span>, called a <strong>value</strong> vector, distinct from 
 <p>This matters because linear maps, stacked on top of each other, collapse into a single linear map — you already know this. A neural network built entirely out of self-attention, with nothing else, could not represent anything more expressive than one large linear function, no matter how many layers you stacked. So self-attention is only one ingredient. A real block also needs a feedforward network with a genuine nonlinear activation, residual connections, and layer normalization — applied together in a specific arrangement, stacked many times over. There is more to attention itself, too — running several differently-projected versions of it in parallel, rather than just one. None of that has been built yet. It is coming, in the subsequent posts.</p></li>
 </ol>
 <p>The neural network architecture you get by putting all of these pieces together — self-attention, value vectors, feedforward layers, residual connections, stacked block after block — is called the <strong>transformer</strong>. It is the foundation, pun intended, of every large language model and large vision model in existence today: GPT, Claude, Gemini, and the rest. Everything in this post was an attempt to arrive at one small piece of that foundation honestly, rather than simply being told it works.</p>
+<p>The next post turns this into running code — softmax applied properly, <span class="math inline">\(W_Q\)</span>, <span class="math inline">\(W_K\)</span>, <span class="math inline">\(W_V\)</span> initialized and learned, and self-attention built, end to end, in NumPy and PyTorch.</p>
 
 
 </section>
