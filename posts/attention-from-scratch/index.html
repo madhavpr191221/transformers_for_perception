@@ -9,7 +9,7 @@
 <meta name="author" content="Madhav Prashanth Ramachandran">
 <meta name="dcterms.date" content="2026-06-16">
 
-<title>Attention From Scratch – Transformers and Perception</title>
+<title>Self-Attention From First Principles – Transformers and Perception</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -143,15 +143,18 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#what-does-a-pixel-mean-without-its-neighbors" id="toc-what-does-a-pixel-mean-without-its-neighbors" class="nav-link active" data-scroll-target="#what-does-a-pixel-mean-without-its-neighbors">What Does a Pixel Mean Without Its Neighbors?</a></li>
-  <li><a href="#setting-the-scene" id="toc-setting-the-scene" class="nav-link" data-scroll-target="#setting-the-scene">Setting the Scene</a></li>
-  <li><a href="#what-should-the-weights-look-like" id="toc-what-should-the-weights-look-like" class="nav-link" data-scroll-target="#what-should-the-weights-look-like">What Should the Weights Look Like?</a>
+  <li><a href="#what-does-a-pixel-mean-without-its-neighbors" id="toc-what-does-a-pixel-mean-without-its-neighbors" class="nav-link active" data-scroll-target="#what-does-a-pixel-mean-without-its-neighbors"><span class="header-section-number">1</span> What Does a Pixel Mean Without Its Neighbors?</a></li>
+  <li><a href="#setting-the-scene" id="toc-setting-the-scene" class="nav-link" data-scroll-target="#setting-the-scene"><span class="header-section-number">2</span> Setting the Scene</a></li>
+  <li><a href="#what-should-the-weights-look-like" id="toc-what-should-the-weights-look-like" class="nav-link" data-scroll-target="#what-should-the-weights-look-like"><span class="header-section-number">3</span> What Should the Weights Look Like?</a>
   <ul class="collapse">
-  <li><a href="#the-naive-answer-euclidean-distance" id="toc-the-naive-answer-euclidean-distance" class="nav-link" data-scroll-target="#the-naive-answer-euclidean-distance">The Naive Answer: Euclidean Distance</a></li>
-  <li><a href="#the-dot-product-reconsidered" id="toc-the-dot-product-reconsidered" class="nav-link" data-scroll-target="#the-dot-product-reconsidered">The Dot Product, Reconsidered</a></li>
-  <li><a href="#a-short-necessary-detour-through-linear-algebra" id="toc-a-short-necessary-detour-through-linear-algebra" class="nav-link" data-scroll-target="#a-short-necessary-detour-through-linear-algebra">A Short, Necessary Detour Through Linear Algebra</a></li>
-  <li><a href="#enter-whitening-and-mahalanobis" id="toc-enter-whitening-and-mahalanobis" class="nav-link" data-scroll-target="#enter-whitening-and-mahalanobis">Enter Whitening — and Mahalanobis</a></li>
-  <li><a href="#a-wishlist" id="toc-a-wishlist" class="nav-link" data-scroll-target="#a-wishlist">A Wishlist</a></li>
+  <li><a href="#the-naive-answer-euclidean-distance" id="toc-the-naive-answer-euclidean-distance" class="nav-link" data-scroll-target="#the-naive-answer-euclidean-distance"><span class="header-section-number">3.1</span> The Naive Answer: Euclidean Distance</a></li>
+  <li><a href="#the-dot-product-reconsidered" id="toc-the-dot-product-reconsidered" class="nav-link" data-scroll-target="#the-dot-product-reconsidered"><span class="header-section-number">3.2</span> The Dot Product, Reconsidered</a></li>
+  <li><a href="#a-short-necessary-detour-through-linear-algebra" id="toc-a-short-necessary-detour-through-linear-algebra" class="nav-link" data-scroll-target="#a-short-necessary-detour-through-linear-algebra"><span class="header-section-number">3.3</span> A Short, Necessary Detour Through Linear Algebra</a></li>
+  <li><a href="#enter-whitening-and-mahalanobis" id="toc-enter-whitening-and-mahalanobis" class="nav-link" data-scroll-target="#enter-whitening-and-mahalanobis"><span class="header-section-number">3.4</span> Enter Whitening — and Mahalanobis</a></li>
+  <li><a href="#a-wishlist" id="toc-a-wishlist" class="nav-link" data-scroll-target="#a-wishlist"><span class="header-section-number">3.5</span> A Wishlist</a></li>
+  <li><a href="#why-two-matrices-not-one" id="toc-why-two-matrices-not-one" class="nav-link" data-scroll-target="#why-two-matrices-not-one"><span class="header-section-number">3.6</span> Why Two Matrices, Not One?</a></li>
+  <li><a href="#from-a-score-to-a-weight" id="toc-from-a-score-to-a-weight" class="nav-link" data-scroll-target="#from-a-score-to-a-weight"><span class="header-section-number">3.7</span> From a Score to a Weight</a></li>
+  <li><a href="#whats-still-missing" id="toc-whats-still-missing" class="nav-link" data-scroll-target="#whats-still-missing"><span class="header-section-number">3.8</span> What’s Still Missing</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -161,8 +164,8 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Attention From Scratch</h1>
-<p class="subtitle lead">What does a pixel mean without its neighbours?</p>
+<h1 class="title">Self-Attention From First Principles</h1>
+<p class="subtitle lead">A geometric route from similarity to self-attention</p>
   <div class="quarto-categories">
     <div class="quarto-category">transformers</div>
     <div class="quarto-category">vision</div>
@@ -197,10 +200,10 @@ window.Quarto = {
 </header>
 
 
-<section id="what-does-a-pixel-mean-without-its-neighbors" class="level2">
-<h2 class="anchored" data-anchor-id="what-does-a-pixel-mean-without-its-neighbors">What Does a Pixel Mean Without Its Neighbors?</h2>
+<section id="what-does-a-pixel-mean-without-its-neighbors" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="what-does-a-pixel-mean-without-its-neighbors"><span class="header-section-number">1</span> What Does a Pixel Mean Without Its Neighbors?</h2>
 <p>Any digital image is just a matrix of numbers. Consider a satellite image of a region. Pick any pixel- say, position <span class="math inline">\((100, 100)\)</span>. Its value is <span class="math inline">\(142\)</span>. What does it mean? Is it a road? A river? A rooftop?</p>
-<p>You cannot tell from a single number. The pixel at <span class="math inline">\((100, 100)\)</span> only means something in relation to its neighbors — <span class="math inline">\((99, 100)\)</span>, <span class="math inline">\((101, 100)\)</span>, <span class="math inline">\((100, 99)\)</span>. The number <span class="math inline">\(142\)</span> is not information. The <em>relationship</em> between <span class="math inline">\(142\)</span> and its neighbors — that is information.</p>
+<p>You cannot tell from a single number. The pixel at <span class="math inline">\((100, 100)\)</span> only means something in relation to its neighbors — <span class="math inline">\((99, 100)\)</span>, <span class="math inline">\((101, 100)\)</span>, <span class="math inline">\((100, 99)\)</span>. The number 142 is information, not meaning. The <em>relationship</em> between neighboring pixels gives meaning.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="images/satellite_image.png" class="img-fluid figure-img"></p>
@@ -220,11 +223,11 @@ window.Quarto = {
 <p><strong>How do we build a representation of a patch of an image that is informed by all the other patches?</strong></p>
 </blockquote>
 <p>Not a fixed representation. But something that is <em>context-dependent</em>- one that changes based on the neighborhood, the way a pixel’s meaning changes based on what surrounds it.</p>
-<p>This is what attention does. And it turns out the path to attention runs through a surprisingly classical idea — the notion of <strong>similarity</strong> between vectors, and specifically, what it means to measure similarity <em>well</em>.</p>
+<p>This is what attention does. And it turns out the path to it runs through a surprisingly classical idea — the notion of <strong>similarity</strong> between vectors, and specifically, what it means to measure similarity <em>well</em>.</p>
 <p>But before we get to the math, let us set the scene properly.</p>
 </section>
-<section id="setting-the-scene" class="level2">
-<h2 class="anchored" data-anchor-id="setting-the-scene">Setting the Scene</h2>
+<section id="setting-the-scene" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="setting-the-scene"><span class="header-section-number">2</span> Setting the Scene</h2>
 <p>Suppose we have an image. We divide it into a grid of non-overlapping patches — say, <span class="math inline">\(16 \times 16\)</span> pixel blocks. Each patch is flattened into a vector. For a colour image with 3 channels, a <span class="math inline">\(16 \times 16\)</span> patch gives a vector of <span class="math inline">\(16 \times 16 \times 3 = 768\)</span> numbers.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -277,12 +280,12 @@ window.Quarto = {
 </div>
 <p>In the next section, we ask: what should those weights look like? And that question leads us directly to the mathematics of similarity.</p>
 </section>
-<section id="what-should-the-weights-look-like" class="level2">
-<h2 class="anchored" data-anchor-id="what-should-the-weights-look-like">What Should the Weights Look Like?</h2>
+<section id="what-should-the-weights-look-like" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="what-should-the-weights-look-like"><span class="header-section-number">3</span> What Should the Weights Look Like?</h2>
 <p>We ended the last section with a question: how do we choose the weights <span class="math inline">\(a_{nm}\)</span> that determine how much patch <span class="math inline">\(m\)</span> contributes to the new representation of patch <span class="math inline">\(n\)</span>?</p>
 <p>Before answering that, we need a more basic ingredient. The weight <span class="math inline">\(a_{nm}\)</span> should depend on how <em>similar</em> patch <span class="math inline">\(n\)</span> and patch <span class="math inline">\(m\)</span> are. Similar patches should influence each other strongly. Dissimilar patches should barely influence each other at all. So really, the question is: how do we measure similarity between two vectors?</p>
-<section id="the-naive-answer-euclidean-distance" class="level3">
-<h3 class="anchored" data-anchor-id="the-naive-answer-euclidean-distance">The Naive Answer: Euclidean Distance</h3>
+<section id="the-naive-answer-euclidean-distance" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="the-naive-answer-euclidean-distance"><span class="header-section-number">3.1</span> The Naive Answer: Euclidean Distance</h3>
 <p>The most obvious measure of similarity between two vectors <span class="math inline">\(\mathbf{x}_n, \mathbf{x}_m \in \mathbb{R}^D\)</span> is Euclidean distance:</p>
 <p><span class="math display">\[d(\mathbf{x}_n, \mathbf{x}_m) = \|\mathbf{x}_n - \mathbf{x}_m\| =
 \sqrt{(\mathbf{x}_n - \mathbf{x}_m)^T (\mathbf{x}_n - \mathbf{x}_m)}\]</span></p>
@@ -291,8 +294,8 @@ window.Quarto = {
 <p>The first assumption is that every dimension matters equally. Step away from pixels for a second and consider this example. Suppose you are comparing two people using two numbers: their height and shoe size. Assume heights and shoe sizes range from 150 to 185 cm and 6 to 12 respectively. A difference of 5 units in height and a difference of 5 units in shoe size <strong>DO NOT</strong> mean the same thing. Euclidean distance does not know and care about it. A similar thing happens with two image patches. A 30 unit pixel shift in sand or asphalt is unusual and may mean something whereas the same shift in sky could mean nothing.</p>
 <p>The second assumption is that the dimensions are uncorrelated- that is each carries its own independent piece of information. Note that I’m using the words independent and uncorrelated very loosely, not rigorously. If one pixel in a patch is bright, the other pixel is almost always bright. Once you know one, you already know most of the others. But Euclidean distance treats them as two separate, independent entities.</p>
 </section>
-<section id="the-dot-product-reconsidered" class="level3">
-<h3 class="anchored" data-anchor-id="the-dot-product-reconsidered">The Dot Product, Reconsidered</h3>
+<section id="the-dot-product-reconsidered" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="the-dot-product-reconsidered"><span class="header-section-number">3.2</span> The Dot Product, Reconsidered</h3>
 <p>Before we fix Euclidean distance, it helps to look at a different — and in some ways more natural — way of comparing two vectors: the dot product. Many of you will have seen this before, in prior coursework. There is nothing wrong with revisiting it — the dot product will matter throughout this series, and it will keep appearing, in new disguises, all the way to self-attention.</p>
 <p>Most of what follows in this section will be review. I am going to be a little pedantic about it anyway, because the discussions coming up — Mahalanobis distance, and eventually queries and keys — lean on this machinery more heavily than it might first appear. It is worth having it nailed down precisely now, rather than gesturing at it later. The dot product between two vectors <span class="math inline">\(\mathbf{x}_n, \mathbf{x}_m \in \mathbb{R}^D\)</span> is defined by:</p>
 <p><span class="math display">\[\mathbf{x}_n^T \mathbf{x}_m = \langle \mathbf{x}_n, \mathbf{x}_m \rangle
@@ -349,8 +352,8 @@ window.Quarto = {
 <p>This is simply the inner product, <em>normalized</em> by the two lengths. Cosine similarity asks only one question: how aligned are the <em>directions</em> of <span class="math inline">\(\mathbf{x}_n\)</span> and <span class="math inline">\(\mathbf{x}_m\)</span>, regardless of length? Parallel vectors give <span class="math inline">\(1\)</span>. Orthogonal vectors give <span class="math inline">\(0\)</span>. Opposite vectors give <span class="math inline">\(-1\)</span> — and Cauchy-Schwarz is exactly what guarantees the number can never escape <span class="math inline">\([-1, 1]\)</span>.</p>
 <p><strong>Application.</strong> In information retrieval, recommender systems, and GenAI applications like RAG, cosine similarity is perhaps the most common way to find the vectors most similar to a query. An embedding’s direction tends to carry the meaning, while its magnitude is often just an artifact of training. This is exactly the situation cosine similarity is built for: it discards scale entirely and asks only whether the directions agree. If you have ever called a vector database’s <code>similarity_search</code> and wondered what was actually happening under the hood — this is it.</p>
 </section>
-<section id="a-short-necessary-detour-through-linear-algebra" class="level3">
-<h3 class="anchored" data-anchor-id="a-short-necessary-detour-through-linear-algebra">A Short, Necessary Detour Through Linear Algebra</h3>
+<section id="a-short-necessary-detour-through-linear-algebra" class="level3" data-number="3.3">
+<h3 data-number="3.3" class="anchored" data-anchor-id="a-short-necessary-detour-through-linear-algebra"><span class="header-section-number">3.3</span> A Short, Necessary Detour Through Linear Algebra</h3>
 <p>We already built inner products, norms, and distance from scratch once in this post. Now we need three more pieces of machinery, in the same spirit, before we can write down Mahalanobis distance.</p>
 <p>Before we can write it down properly, we need three things: the spectral theorem, what an eigendecomposition actually means geometrically, and what it means to take the square root of a matrix. I am not going to shortcut this. The whole point of Mahalanobis distance — and the reason it connects to attention later — lives inside this machinery, not around it. Skipping it would mean asking you to trust a formula instead of understanding it, and that is not how this book works.</p>
 <p>If you already know this material cold, feel free to skim — the payoff comes in the next section, when we use all of this to derive Mahalanobis distance properly. But here is a TL;DR.</p>
@@ -403,8 +406,8 @@ X_D\)</span>. That would be a different, false claim. <span class="math inline">
 </figure>
 </div>
 </section>
-<section id="enter-whitening-and-mahalanobis" class="level3">
-<h3 class="anchored" data-anchor-id="enter-whitening-and-mahalanobis">Enter Whitening — and Mahalanobis</h3>
+<section id="enter-whitening-and-mahalanobis" class="level3" data-number="3.4">
+<h3 data-number="3.4" class="anchored" data-anchor-id="enter-whitening-and-mahalanobis"><span class="header-section-number">3.4</span> Enter Whitening — and Mahalanobis</h3>
 <p>We now have all the linear algebra we need. Time to put it to work.</p>
 <p>Recall that Euclidean distance treats every coordinate as equally informative and every coordinate as independent. Both failures share a single root cause. Euclidean distance is implicitly measuring things in a coordinate system where every axis is assumed to have equal, unit variance, and no axis tells you anything about any other. Real data does not live in such a space.</p>
 <p>So here is the natural question. Euclidean distance gives wrong answers when features have unequal variance or move together — we established that earlier. So let’s play a game. Can we find a linear transformation — call it <span class="math inline">\(A\)</span> — such that ordinary, unweighted Euclidean distance, computed <em>after</em> applying <span class="math inline">\(A\)</span>, gives us the real distance between the original data points — the distance that correctly accounts for how much each direction actually varies, and how much different directions echo each other?</p>
@@ -452,12 +455,14 @@ A\mathbf{X}_n\)</span> and <span class="math inline">\(\mathbf{Y}_m := A\mathbf{
 <p><span class="math display">\[d_M(\mathbf{x}_n, \mathbf{x}_m)^2 = (\mathbf{x}_n - \mathbf{x}_m)^T \, \Sigma^{-1} \, (\mathbf{x}_n - \mathbf{x}_m)\]</span></p>
 <p>Here is the question worth sitting with. As the formula is written, <span class="math inline">\(\Sigma^{-1}\)</span> is one fixed matrix, used identically no matter which two patches we plug in. But nothing about the <em>idea</em> of a matrix sitting between two vectors requires this. We could write down a more general version of this formula — one where the matrix in the middle is allowed to change depending on which two patches, within the same image, are actually being compared: different when comparing the patch containing a boat to the patch of water right next to it, than when comparing two patches that are both plain, empty sky.</p>
 </section>
-<section id="a-wishlist" class="level3">
-<h3 class="anchored" data-anchor-id="a-wishlist">A Wishlist</h3>
+<section id="a-wishlist" class="level3" data-number="3.5">
+<h3 data-number="3.5" class="anchored" data-anchor-id="a-wishlist"><span class="header-section-number">3.5</span> A Wishlist</h3>
 <p>Let’s ask the what-if question properly this time, with a wishlist in hand before we reach for any formula.</p>
 <p>We want a similarity score between two patches, <span class="math inline">\(\mathbf{x}_n\)</span> and <span class="math inline">\(\mathbf{x}_m\)</span>, that improves on Mahalanobis distance in one specific way: it should be allowed to depend on <em>which</em> patch is asking the question. Beyond that, here is what we want from it.</p>
-<p><strong>It should still be built from a matrix sitting between two vectors.</strong> We are not abandoning the geometric machinery of this entire post — inner products, quadratic forms, all of it. We want to keep using a matrix, the way <span class="math inline">\(\Sigma^{-1}\)</span> was a matrix. We are only asking the matrix to do more.</p>
-<p><strong>It should not have to be symmetric.</strong> This is the part that breaks from Mahalanobis outright. <span class="math inline">\(\Sigma^{-1}\)</span> is symmetric — the similarity of <span class="math inline">\(\mathbf{x}_n\)</span> to <span class="math inline">\(\mathbf{x}_m\)</span> is identical to the similarity of <span class="math inline">\(\mathbf{x}_m\)</span> to <span class="math inline">\(\mathbf{x}_n\)</span>, no matter which one you call “first.” But think again about a patch of boat sitting in a patch of water. The boat patch needs the water patch — it tells the boat patch whether it is floating, moving, in open water or near a shore. The water patch, on the other hand, gains very little from knowing about the boat — it already knows it is water from the waves and shoreline around it. Relevance, in other words, can be <em>directional</em>. What patch <span class="math inline">\(n\)</span> needs from patch <span class="math inline">\(m\)</span> need not equal what patch <span class="math inline">\(m\)</span> needs from patch <span class="math inline">\(n\)</span>. A symmetric matrix can never capture this. We need to let that constraint go.</p>
+<ol type="1">
+<li><p><strong>It should still be built from a matrix sitting between two vectors.</strong> We are not abandoning the geometric machinery of this entire post — inner products, quadratic forms, all of it. We want to keep using a matrix, the way <span class="math inline">\(\Sigma^{-1}\)</span> was a matrix. We are only asking the matrix to do more.</p></li>
+<li><p><strong>It should not have to be symmetric.</strong> This is the part that breaks from Mahalanobis outright. <span class="math inline">\(\Sigma^{-1}\)</span> is symmetric — the similarity of <span class="math inline">\(\mathbf{x}_n\)</span> to <span class="math inline">\(\mathbf{x}_m\)</span> is identical to the similarity of <span class="math inline">\(\mathbf{x}_m\)</span> to <span class="math inline">\(\mathbf{x}_n\)</span>, no matter which one you call “first.” But think again about a patch of boat sitting in a patch of water. The boat patch needs the water patch — it tells the boat patch whether it is floating, moving, in open water or near a shore. The water patch, on the other hand, gains very little from knowing about the boat — it already knows it is water from the waves and shoreline around it. Relevance, in other words, can be <em>directional</em>. What patch <span class="math inline">\(n\)</span> needs from patch <span class="math inline">\(m\)</span> need not equal what patch <span class="math inline">\(m\)</span> needs from patch <span class="math inline">\(n\)</span>. A symmetric matrix can never capture this. We need to let that constraint go.</p></li>
+</ol>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="images/boat_water_asymmetry.png" class="img-fluid figure-img"></p>
@@ -465,34 +470,53 @@ A\mathbf{X}_n\)</span> and <span class="math inline">\(\mathbf{Y}_m := A\mathbf{
 </figure>
 </div>
 <p>A quick note on what “score from boat to water” means here: it is the score <em>patch A computes when looking at patch B</em> — how much the water patch matters, from the boat patch’s point of view. “Score from water to boat” is the reverse — how much the boat matters, from the water’s point of view. The image makes the point that these two numbers need not be equal. We will give the two roles in this asymmetry — the “asker” and the “answerer” — proper names, query and key, by the end of this section.</p>
-<p><strong>It should still come from a linear map.</strong> We are not yet ready to give up linearity — that is a much bigger leap, and not one this post needs to make. We want the new, more flexible matrix to still arise from a simple linear transformation of the original vectors, the same spirit as <span class="math inline">\(A\mathbf{x}\)</span> in the whitening section.</p>
-<p><strong>It should reduce to something like the inner product.</strong> Whatever we end up with, plugging in the simplest possible choices should recover the dot product we started this whole post with — not a completely unrelated quantity.</p>
-<p><strong>Why two matrices, and not one?</strong> It is worth checking this directly, because the answer is not obvious until you do the algebra. Suppose we tried a single shared matrix <span class="math inline">\(W\)</span>, applied to both patches:</p>
+<ol start="3" type="1">
+<li><p><strong>It should still come from a linear map.</strong> We are not yet ready to give up linearity — that is a much bigger leap, and not one this post needs to make. We want the new, more flexible matrix to still arise from a simple linear transformation of the original vectors, the same spirit as <span class="math inline">\(A\mathbf{x}\)</span> in the whitening section.</p></li>
+<li><p><strong>It should reduce to something like the inner product.</strong> Whatever we end up with, plugging in the simplest possible choices should recover the dot product we started this whole post with — not a completely unrelated quantity.</p></li>
+</ol>
+<p>With this wishlist in hand, a natural question arises before we even attempt a construction: could one matrix possibly satisfy all four? Specifically — item 2 demanded asymmetry. Can a single shared matrix, applied to both patches, ever give us that?</p>
+</section>
+<section id="why-two-matrices-not-one" class="level3" data-number="3.6">
+<h3 data-number="3.6" class="anchored" data-anchor-id="why-two-matrices-not-one"><span class="header-section-number">3.6</span> Why Two Matrices, Not One?</h3>
+<p>It is worth checking this directly, because the answer is not obvious until you do the algebra. Suppose we tried a single shared matrix <span class="math inline">\(W\)</span>, applied to both patches:</p>
 <p><span class="math display">\[\mathbf{q}_n = W\mathbf{x}_n, \qquad \mathbf{k}_m = W\mathbf{x}_m,
 \qquad \text{score}(n,m) = \mathbf{x}_n^T W^TW \mathbf{x}_m\]</span></p>
-<p>The matrix sitting in the middle is <span class="math inline">\(W^TW\)</span> — and <span class="math inline">\(W^TW\)</span> is symmetric, no matter what <span class="math inline">\(W\)</span> is: <span class="math inline">\((W^TW)^T = W^TW\)</span>. A single shared matrix can only ever produce a symmetric similarity. We would be back exactly where Mahalanobis left us, with <span class="math inline">\(\text{score}(n,m) = \text{score}(m,n)\)</span> always — the one constraint the boat and the water demanded we drop. To get directional relevance, we need two genuinely different matrices, one for each role.</p>
-<p>With this wishlist in hand, here is the natural construction. Instead of applying one matrix to both <span class="math inline">\(\mathbf{x}_n\)</span> and <span class="math inline">\(\mathbf{x}_m\)</span> identically, apply <em>two different</em> linear maps — one to each:</p>
+<p>Let <span class="math inline">\(S := W^TW\)</span>, so <span class="math inline">\(\text{score}(n,m) = \mathbf{x}_n^TS\mathbf{x}_m\)</span>. Since this is a scalar, it equals its own transpose:</p>
+<p><span class="math display">\[\mathbf{x}_n^TS\mathbf{x}_m = (\mathbf{x}_n^TS\mathbf{x}_m)^T
+= \mathbf{x}_m^TS^T\mathbf{x}_n = \mathbf{x}_m^TS\mathbf{x}_n
+= \text{score}(m,n)\]</span></p>
+<p>using <span class="math inline">\(S^T = (W^TW)^T = W^TW = S\)</span> in the second-to-last step. So <span class="math inline">\(\text{score}(n,m) = \text{score}(m,n)\)</span> — a single shared matrix can only ever produce a symmetric similarity. One matrix fails item 2, no matter how it’s chosen. We need two genuinely different matrices, one for each role.</p>
+<p>With this settled, here is the natural construction. Instead of applying one matrix to both <span class="math inline">\(\mathbf{x}_n\)</span> and <span class="math inline">\(\mathbf{x}_m\)</span> identically, apply <em>two different</em> linear maps — one to each:</p>
 <p><span class="math display">\[\mathbf{q}_n = W_Q \mathbf{x}_n, \qquad \mathbf{k}_m = W_K \mathbf{x}_m\]</span></p>
 <p>where <span class="math inline">\(W_Q, W_K \in \mathbb{R}^{d \times D}\)</span> are two, generally different, matrices. Now define the similarity between patch <span class="math inline">\(n\)</span> and patch <span class="math inline">\(m\)</span> as the inner product of these transformed vectors:</p>
 <p><span class="math display">\[\text{score}(n, m) = \mathbf{q}_n^T \mathbf{k}_m = \mathbf{x}_n^T W_Q^T W_K \, \mathbf{x}_m\]</span></p>
-<p>Check this against the wishlist. It is still a matrix sitting between two vectors — the matrix is <span class="math inline">\(M := W_Q^T W_K\)</span>. It need not be symmetric: <span class="math inline">\(M^T = W_K^T W_Q\)</span>, which is generally not equal to <span class="math inline">\(M = W_Q^T W_K\)</span> unless <span class="math inline">\(W_Q = W_K\)</span>. So <span class="math inline">\(\text{score}(n,m) \neq \text{score}(m,n)\)</span>, in general — exactly the directionality the boat and the water demanded. It still comes from linear maps — <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> are both linear transformations. And it reduces to the plain inner product the moment <span class="math inline">\(W_Q = W_K = I\)</span>.</p>
+<p>Check this against the full wishlist. It is still a matrix sitting between two vectors — the matrix is <span class="math inline">\(M := W_Q^T W_K\)</span> — satisfying item 1. It need not be symmetric: <span class="math inline">\(M^T = W_K^T W_Q\)</span>, which is generally not equal to <span class="math inline">\(M = W_Q^T W_K\)</span> unless <span class="math inline">\(W_Q = W_K\)</span>. So <span class="math inline">\(\text{score}(n,m) \neq
+\text{score}(m,n)\)</span>, in general — item 2, satisfied. It still comes from linear maps — <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> are both linear transformations — satisfying item 3. And it reduces to the plain inner product the moment <span class="math inline">\(W_Q = W_K = I\)</span> — item 4, satisfied.</p>
 <p><span class="math inline">\(\mathbf{q}_n\)</span> is called a <strong>query</strong> — what patch <span class="math inline">\(n\)</span> is asking about. <span class="math inline">\(\mathbf{k}_m\)</span> is called a <strong>key</strong> — what patch <span class="math inline">\(m\)</span> has to offer, as seen by anyone asking. We have, without quite announcing it, just written down the <span class="math inline">\(Q\)</span> and <span class="math inline">\(K\)</span> of self-attention.</p>
-<p>But remember where this entire post started. Back in “Setting the Scene,” we said <span class="math inline">\(\mathbf{y}_n\)</span> would be a weighted sum of the other patches:</p>
+</section>
+<section id="from-a-score-to-a-weight" class="level3" data-number="3.7">
+<h3 data-number="3.7" class="anchored" data-anchor-id="from-a-score-to-a-weight"><span class="header-section-number">3.7</span> From a Score to a Weight</h3>
+<p>Remember where this entire post started. Back in “Setting the Scene,” we said <span class="math inline">\(\mathbf{y}_n\)</span> would be a weighted sum of the other patches:</p>
 <p><span class="math display">\[\mathbf{y}_n = \sum_{m=1}^N a_{nm}\,\mathbf{x}_m\]</span></p>
 <p>A score is not yet a weight. <span class="math inline">\(\text{score}(n,m) = \mathbf{q}_n^T\mathbf{k}_m\)</span> can be any real number — negative, larger than one, completely unconstrained. The weights <span class="math inline">\(a_{nm}\)</span>, on the other hand, were required from the very beginning to satisfy <span class="math inline">\(a_{nm} \geq 0\)</span> and <span class="math inline">\(\sum_m a_{nm} =
 1\)</span> — a proper weighted average, not just any combination. We have built the similarity. We have not yet built the average.</p>
 <p>That conversion — from an unconstrained score to a valid set of weights that sum to one — is the job of <strong>softmax</strong>, and it is exactly where this post ends and the next one begins.</p>
 <p><span class="math display">\[a_{nm} = \frac{\exp(\text{score}(n,m))}{\sum_{m'=1}^N \exp(\text{score}(n,m'))}\]</span></p>
-<p>We will not derive softmax properly here — that deserves its own treatment, the same care we gave Mahalanobis distance. For now, notice only the shape of where we have landed. Start with raw pixel values. Ask what it would mean to measure similarity between two patches well. Pass through Euclidean distance, Mahalanobis distance, queries and keys. Arrive, finally, at a number that can be turned into a weight. Plug those weights back into the formula we wrote at the very start.</p>
+<p>Readers will recognize this as the <strong>softmax</strong> function used in multi-class classification problems. For now, notice only the shape of where we have landed. Start with raw pixel values. Ask what it would mean to measure similarity between two patches well. Pass through Euclidean distance, Mahalanobis distance, queries and keys. Arrive, finally, at the softmax.<br>
+Plug those weights back into the formula we wrote at the very start.</p>
 <p><span class="math display">\[\mathbf{y}_n = \sum_{m=1}^N a_{nm}\,\mathbf{x}_m\]</span></p>
+</section>
+<section id="whats-still-missing" class="level3" data-number="3.8">
+<h3 data-number="3.8" class="anchored" data-anchor-id="whats-still-missing"><span class="header-section-number">3.8</span> What’s Still Missing</h3>
 <p>This is close to self-attention, but not quite there yet. A few things are still missing, worth naming honestly rather than glossing over.</p>
-<p>First, we have written down a similarity score, <span class="math inline">\(\text{score}(n,m) =
-\mathbf{q}_n^T\mathbf{k}_m\)</span>, but not yet the weights <span class="math inline">\(a_{nm}\)</span> themselves. You already know softmax. What we have not shown is the specific way it gets applied here. This is a short step that will be taken later.</p>
-<p>Second, and more fundamental: even with that step taken, <span class="math inline">\(a_{nm}\)</span> depends entirely on <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> — and we have said nothing about where those matrices actually come from. Recall that <span class="math inline">\(\Sigma^{-1}\)</span>, back in Mahalanobis distance, had a closed-form answer: estimate the covariance of the data, invert it, done. <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> have no such recipe. There is no formula that computes them from statistics. They have to be <em>learned</em> — found by some process that adjusts them based on how well the resulting <span class="math inline">\(\mathbf{y}_n\)</span> serves whatever task the network is trying to solve. We have not said <strong>anything</strong> about what that process looks like. That omission is not a minor gap. It is most of what separates “we have written down a plausible formula” from “we have a trainable mechanism.” Third — we have been averaging the raw vectors <span class="math inline">\(\mathbf{x}_m\)</span> this entire post:</p>
+<ol type="1">
+<li><p><strong>The softmax mechanism, applied here, has not actually been shown.</strong> We have written down a similarity score, <span class="math inline">\(\text{score}(n,m) = \mathbf{q}_n^T\mathbf{k}_m\)</span>, and we have written down the softmax formula above — but the specific way these combine, including how the scores are scaled before the exponential, has not been derived. You already know softmax in general. This is a short step that will be taken later.</p></li>
+<li><p><strong><span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> have no closed-form recipe.</strong> Even with softmax applied, <span class="math inline">\(a_{nm}\)</span> depends entirely on <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> — and we have said nothing about where those matrices actually come from. Recall that <span class="math inline">\(\Sigma^{-1}\)</span>, back in Mahalanobis distance, had a closed-form answer: estimate the covariance of the data, invert it, done. <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> have no such recipe. They have to be <em>learned</em> — found by some process that adjusts them based on how well the resulting <span class="math inline">\(\mathbf{y}_n\)</span> serves whatever task the network is trying to solve. We have not said anything about what that process looks like. That omission is not minor. It is most of what separates “we have written down a plausible formula” from “we have a trainable mechanism.”</p></li>
+<li><p><strong>We have been averaging the raw vectors <span class="math inline">\(\mathbf{x}_m\)</span>, not values.</strong> The formula we have used throughout this post is</p>
 <p><span class="math display">\[\mathbf{y}_n = \sum_{m=1}^N a_{nm}\,\mathbf{x}_m, \qquad
 a_{nm} = \text{softmax}_m\big(\mathbf{q}_n^T\mathbf{k}_m\big)\]</span></p>
 <p>Nothing forces us to keep it that way. The weights <span class="math inline">\(a_{nm}\)</span> already come from learned projections — <span class="math inline">\(\mathbf{q}_n\)</span> and <span class="math inline">\(\mathbf{k}_m\)</span> — rather than the raw vectors directly. So why should the <em>thing being averaged</em> stay unprojected? Self-attention, properly built, makes one more substitution: replace <span class="math inline">\(\mathbf{x}_m\)</span> inside the sum with a third, separately learned projection of each patch, <span class="math inline">\(\mathbf{v}_m =
-W_V\mathbf{x}_m\)</span>, a <strong>value</strong> vector, distinct from the query and the key:</p>
+W_V\mathbf{x}_m\)</span>, called a <strong>value</strong> vector, distinct from the query and the key:</p>
 <p><span class="math display">\[\mathbf{y}_n = \sum_{m=1}^N a_{nm}\,\mathbf{v}_m\]</span></p>
 <p>We flagged this back in our very first callout and have not returned to it until now.</p>
 <p>The one-line reason it exists: queries and keys answer “how much does patch <span class="math inline">\(m\)</span> matter to patch <span class="math inline">\(n\)</span>,” but that is a different question from “what information should actually be averaged in, once we know how much it matters.” Forcing the raw <span class="math inline">\(\mathbf{x}_m\)</span> to answer both questions makes one vector do two jobs that have no reason to be tied together. A patch might be a very strong <em>match</em> for patch <span class="math inline">\(n\)</span> — high <span class="math inline">\(\mathbf{q}_n^T\mathbf{k}_m\)</span> — while the <em>content</em> worth passing along from it is something other than its raw pixel values. The value vector lets the network learn what to contribute separately from what makes it relevant in the first place — exactly the way query and key separated “what am I asking” from “what do I have to offer.”</p>
@@ -502,8 +526,10 @@ W_V\mathbf{x}_m\)</span>, a <strong>value</strong> vector, distinct from the que
 <figcaption>One patch, three different jobs — a query for matching, a key for being matched, and a value for the content that actually gets passed along.</figcaption>
 </figure>
 </div>
-<p>We will build this properly in the next post.</p>
-<p>Fourth — worth sitting with for a moment — everything we built is <em>linear</em>. <span class="math inline">\(A\mathbf{x}\)</span> in whitening. <span class="math inline">\(W_Q\mathbf{x}_n\)</span> and <span class="math inline">\(W_K\mathbf{x}_m\)</span> for the query and key. The value vector will be no different: <span class="math inline">\(W_V\mathbf{x}_m\)</span>, another linear map. Self-attention, as derived so far, contains no nonlinearity beyond softmax itself, which normalizes rather than transforms. This matters because linear maps, stacked on top of each other, collapse into a single linear map — you already know this. A network built entirely out of self-attention, with nothing else, could not represent anything more expressive than one large linear function, no matter how many layers you stacked. So self-attention is only one ingredient. A real block also needs a feedforward network with a genuine nonlinear activation, residual connections, and layer normalization — applied together in a specific arrangement, stacked many times over. There is more to attention itself, too — running several differently-projected versions of it in parallel, rather than just one. None of that has been built yet. It is coming, in the subsequent posts.</p>
+<p>We will build this properly in the next post.</p></li>
+<li><p><strong>Everything we built is linear.</strong> <span class="math inline">\(A\mathbf{x}\)</span> in whitening. <span class="math inline">\(W_Q\mathbf{x}_n\)</span> and <span class="math inline">\(W_K\mathbf{x}_m\)</span> for the query and key. The value vector is no different: <span class="math inline">\(W_V\mathbf{x}_m\)</span>, another linear map. Self-attention, as derived so far, contains no nonlinearity beyond softmax itself, which normalizes rather than transforms.</p>
+<p>This matters because linear maps, stacked on top of each other, collapse into a single linear map — you already know this. A neural network built entirely out of self-attention, with nothing else, could not represent anything more expressive than one large linear function, no matter how many layers you stacked. So self-attention is only one ingredient. A real block also needs a feedforward network with a genuine nonlinear activation, residual connections, and layer normalization — applied together in a specific arrangement, stacked many times over. There is more to attention itself, too — running several differently-projected versions of it in parallel, rather than just one. None of that has been built yet. It is coming, in the subsequent posts.</p></li>
+</ol>
 <p>The neural network architecture you get by putting all of these pieces together — self-attention, value vectors, feedforward layers, residual connections, stacked block after block — is called the <strong>transformer</strong>. It is the foundation, pun intended, of every large language model and large vision model in existence today: GPT, Claude, Gemini, and the rest. Everything in this post was an attempt to arrive at one small piece of that foundation honestly, rather than simply being told it works.</p>
 
 
