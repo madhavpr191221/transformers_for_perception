@@ -46,7 +46,7 @@ So here is the question this post is really asking:
 
 Not a fixed representation. But something that is *context-dependent*- one that changes based on the neighborhood, the way a pixel's meaning changes based on what surrounds it. 
 
-This is what attention does. And it turns out the path to it runs 
+This is what self-attention does. And it turns out the path to it runs 
 through a surprisingly classical idea — the notion of **similarity** 
 between vectors, and specifically, what it means to measure similarity 
 *well*.
