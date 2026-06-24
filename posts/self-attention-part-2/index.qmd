@@ -1522,5 +1522,81 @@ $$
 \frac{QK^\top}{\sqrt{d_k}}
 \right)V.
 $$
+:::
 
 
+![The Single-Head Scaled Dot Product Self-Attention Algorithm.](images/self-attention.png){#fig-query-key-matrices}
+
+
+## Multi-Head Self-Attention
+
+Single-head self-attention gives us one attention matrix. But one attention matrix means one way of comparing patches.
+
+In a satellite image, that may be too restrictive. The boat patch may need to look at nearby water to understand its local context. Another head may look at shoreline structure. Another may capture broader spatial layout. Another may focus on texture or background.
+
+So instead of learning one set of query, key, and value projections, multi-head attention learns several sets in parallel.
+Each head gets its own query, key, and value projections. Each head produces its own attention output. The outputs are then concatenated and mixed.
+
+### The Details of Multi-Head Attention
+
+There is a shape issue that should not be left unsaid. In Part 1, we 
+said that self-attention takes the patch matrix $X \in \mathbb{R}^{N 
+\times D}$ and produces a richer matrix $Y \in \mathbb{R}^{N \times D}$ 
+— same number of patches, same representation dimension. But the 
+output of a single attention head does not automatically live in 
+$\mathbb{R}^{N \times D}$.
+
+We use a superscript $(h)$ to denote quantities belonging to head $h$, 
+where $h = 1, 2, \ldots, H$. Each head has its own projection matrices:
+
+$$W_Q^{(h)} \in \mathbb{R}^{D \times d_k}, \qquad 
+W_K^{(h)} \in \mathbb{R}^{D \times d_k}, \qquad 
+W_V^{(h)} \in \mathbb{R}^{D \times d_v}$$
+
+and produces its own query, key, and value matrices:
+
+$$Q^{(h)} = XW_Q^{(h)} \in \mathbb{R}^{N \times d_k}, \qquad 
+K^{(h)} = XW_K^{(h)} \in \mathbb{R}^{N \times d_k}, \qquad 
+V^{(h)} = XW_V^{(h)} \in \mathbb{R}^{N \times d_v}$$
+
+and its own attention output:
+
+$$Y^{(h)} = \text{softmax}\left(\frac{Q^{(h)}{K^{(h)}}^\top}
+{\sqrt{d_k}}\right) V^{(h)} \in \mathbb{R}^{N \times d_v}$$
+
+**Step 1: Concatenate.** The $H$ head outputs are concatenated 
+column-wise — each $Y^{(h)}$ has $N$ rows, so we place their columns 
+next to each other:
+
+$$Y_{\text{concat}} = \begin{bmatrix} Y^{(1)} & Y^{(2)} & \cdots & 
+Y^{(H)} \end{bmatrix} \in \mathbb{R}^{N \times Hd_v}$$
+
+**Step 2: Project back.** We want the final output $Y \in \mathbb{R}^{N 
+\times D}$. Apply a learned output projection $W_O \in \mathbb{R}^{D 
+\times Hd_v}$:
+
+$$Y = Y_{\text{concat}} W_O^\top \in \mathbb{R}^{N \times D}$$
+
+Dimensions: $Y_{\text{concat}} \in \mathbb{R}^{N \times Hd_v}$ and 
+$W_O^\top \in \mathbb{R}^{Hd_v \times D}$, giving $Y \in \mathbb{R}^{N 
+\times D}$ as required.
+
+**The standard choice.** Following the original attention paper, set 
+$d_k = d_v = D/H$, so that $Hd_v = D$ and the concatenated output 
+already has the right total dimension before the projection. This 
+means each head works in a $D/H$-dimensional space — smaller than the 
+full representation, but the $H$ heads together span the same total 
+dimension. For example:
+
+$$D = 768, \quad H = 12 \implies d_k = d_v = 64$$
+
+Each head attends in a 64-dimensional space. The 12 heads are 
+concatenated to recover 768 dimensions, and $W_O$ mixes them back 
+into the final patch representations.
+
+::: {.callout-note appearance="minimal"}
+$d_k$ and $d_v$ need not be equal — the query/key dimension and the 
+value dimension are independent design choices. The original paper 
+sets them equal for simplicity. We follow that convention here but 
+note the distinction.
+:::
