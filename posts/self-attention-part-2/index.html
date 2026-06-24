@@ -165,6 +165,10 @@ window.Quarto = {
   <li><a href="#matrix-form-of-the-output" id="toc-matrix-form-of-the-output" class="nav-link" data-scroll-target="#matrix-form-of-the-output"><span class="header-section-number">4.1</span> Matrix Form of the Output</a></li>
   </ul></li>
   <li><a href="#algorithm-self-attention" id="toc-algorithm-self-attention" class="nav-link" data-scroll-target="#algorithm-self-attention"><span class="header-section-number">5</span> Algorithm: Self-Attention</a></li>
+  <li><a href="#multi-head-self-attention" id="toc-multi-head-self-attention" class="nav-link" data-scroll-target="#multi-head-self-attention"><span class="header-section-number">6</span> Multi-Head Self-Attention</a>
+  <ul class="collapse">
+  <li><a href="#the-details-of-multi-head-attention" id="toc-the-details-of-multi-head-attention" class="nav-link" data-scroll-target="#the-details-of-multi-head-attention"><span class="header-section-number">6.1</span> The Details of Multi-Head Attention</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -1351,10 +1355,64 @@ W_V \in \mathbb{R}^{D \times d_v}.
 \frac{QK^\top}{\sqrt{d_k}}
 \right)V.
 \]</span></p>
-
-
 </div>
 </div>
+<div id="fig-query-key-matrices" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-query-key-matrices-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/self-attention.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-query-key-matrices-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: The Single-Head Scaled Dot Product Self-Attention Algorithm.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="multi-head-self-attention" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="multi-head-self-attention"><span class="header-section-number">6</span> Multi-Head Self-Attention</h2>
+<p>Single-head self-attention gives us one attention matrix. But one attention matrix means one way of comparing patches.</p>
+<p>In a satellite image, that may be too restrictive. The boat patch may need to look at nearby water to understand its local context. Another head may look at shoreline structure. Another may capture broader spatial layout. Another may focus on texture or background.</p>
+<p>So instead of learning one set of query, key, and value projections, multi-head attention learns several sets in parallel. Each head gets its own query, key, and value projections. Each head produces its own attention output. The outputs are then concatenated and mixed.</p>
+<section id="the-details-of-multi-head-attention" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="the-details-of-multi-head-attention"><span class="header-section-number">6.1</span> The Details of Multi-Head Attention</h3>
+<p>There is a shape issue that should not be left unsaid. In Part 1, we said that self-attention takes the patch matrix <span class="math inline">\(X \in \mathbb{R}^{N
+\times D}\)</span> and produces a richer matrix <span class="math inline">\(Y \in \mathbb{R}^{N \times D}\)</span> — same number of patches, same representation dimension. But the output of a single attention head does not automatically live in <span class="math inline">\(\mathbb{R}^{N \times D}\)</span>.</p>
+<p>We use a superscript <span class="math inline">\((h)\)</span> to denote quantities belonging to head <span class="math inline">\(h\)</span>, where <span class="math inline">\(h = 1, 2, \ldots, H\)</span>. Each head has its own projection matrices:</p>
+<p><span class="math display">\[W_Q^{(h)} \in \mathbb{R}^{D \times d_k}, \qquad
+W_K^{(h)} \in \mathbb{R}^{D \times d_k}, \qquad
+W_V^{(h)} \in \mathbb{R}^{D \times d_v}\]</span></p>
+<p>and produces its own query, key, and value matrices:</p>
+<p><span class="math display">\[Q^{(h)} = XW_Q^{(h)} \in \mathbb{R}^{N \times d_k}, \qquad
+K^{(h)} = XW_K^{(h)} \in \mathbb{R}^{N \times d_k}, \qquad
+V^{(h)} = XW_V^{(h)} \in \mathbb{R}^{N \times d_v}\]</span></p>
+<p>and its own attention output:</p>
+<p><span class="math display">\[Y^{(h)} = \text{softmax}\left(\frac{Q^{(h)}{K^{(h)}}^\top}
+{\sqrt{d_k}}\right) V^{(h)} \in \mathbb{R}^{N \times d_v}\]</span></p>
+<p><strong>Step 1: Concatenate.</strong> The <span class="math inline">\(H\)</span> head outputs are concatenated column-wise — each <span class="math inline">\(Y^{(h)}\)</span> has <span class="math inline">\(N\)</span> rows, so we place their columns next to each other:</p>
+<p><span class="math display">\[Y_{\text{concat}} = \begin{bmatrix} Y^{(1)} &amp; Y^{(2)} &amp; \cdots &amp;
+Y^{(H)} \end{bmatrix} \in \mathbb{R}^{N \times Hd_v}\]</span></p>
+<p><strong>Step 2: Project back.</strong> We want the final output <span class="math inline">\(Y \in \mathbb{R}^{N
+\times D}\)</span>. Apply a learned output projection <span class="math inline">\(W_O \in \mathbb{R}^{D
+\times Hd_v}\)</span>:</p>
+<p><span class="math display">\[Y = Y_{\text{concat}} W_O^\top \in \mathbb{R}^{N \times D}\]</span></p>
+<p>Dimensions: <span class="math inline">\(Y_{\text{concat}} \in \mathbb{R}^{N \times Hd_v}\)</span> and <span class="math inline">\(W_O^\top \in \mathbb{R}^{Hd_v \times D}\)</span>, giving <span class="math inline">\(Y \in \mathbb{R}^{N
+\times D}\)</span> as required.</p>
+<p><strong>The standard choice.</strong> Following the original attention paper, set <span class="math inline">\(d_k = d_v = D/H\)</span>, so that <span class="math inline">\(Hd_v = D\)</span> and the concatenated output already has the right total dimension before the projection. This means each head works in a <span class="math inline">\(D/H\)</span>-dimensional space — smaller than the full representation, but the <span class="math inline">\(H\)</span> heads together span the same total dimension. For example:</p>
+<p><span class="math display">\[D = 768, \quad H = 12 \implies d_k = d_v = 64\]</span></p>
+<p>Each head attends in a 64-dimensional space. The 12 heads are concatenated to recover 768 dimensions, and <span class="math inline">\(W_O\)</span> mixes them back into the final patch representations.</p>
+<div class="callout callout-style-simple callout-note no-icon">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><span class="math inline">\(d_k\)</span> and <span class="math inline">\(d_v\)</span> need not be equal — the query/key dimension and the value dimension are independent design choices. The original paper sets them equal for simplicity. We follow that convention here but note the distinction.</p>
+</div>
+</div>
+</div>
+
+
+</section>
 </section>
 
 </main> <!-- /main -->
