@@ -157,7 +157,14 @@ window.Quarto = {
   <li><a href="#softmax-has-a-scale-problem" id="toc-softmax-has-a-scale-problem" class="nav-link" data-scroll-target="#softmax-has-a-scale-problem"><span class="header-section-number">3.2</span> Softmax Has a Scale Problem</a></li>
   <li><a href="#how-large-are-the-score-gaps" id="toc-how-large-are-the-score-gaps" class="nav-link" data-scroll-target="#how-large-are-the-score-gaps"><span class="header-section-number">3.3</span> How Large Are the Score Gaps?</a></li>
   <li><a href="#when-soft-attention-becomes-hard-attention" id="toc-when-soft-attention-becomes-hard-attention" class="nav-link" data-scroll-target="#when-soft-attention-becomes-hard-attention"><span class="header-section-number">3.4</span> When Soft Attention Becomes Hard Attention</a></li>
+  <li><a href="#the-gradient-problem-when-softmax-stops-passing-derivatives" id="toc-the-gradient-problem-when-softmax-stops-passing-derivatives" class="nav-link" data-scroll-target="#the-gradient-problem-when-softmax-stops-passing-derivatives"><span class="header-section-number">3.5</span> The Gradient Problem: When Softmax Stops Passing Derivatives</a></li>
+  <li><a href="#scaled-dot-product-attention-the-attention-matrix" id="toc-scaled-dot-product-attention-the-attention-matrix" class="nav-link" data-scroll-target="#scaled-dot-product-attention-the-attention-matrix"><span class="header-section-number">3.6</span> Scaled Dot-Product Attention: The Attention Matrix</a></li>
   </ul></li>
+  <li><a href="#the-value-vectors" id="toc-the-value-vectors" class="nav-link" data-scroll-target="#the-value-vectors"><span class="header-section-number">4</span> The Value Vectors</a>
+  <ul class="collapse">
+  <li><a href="#matrix-form-of-the-output" id="toc-matrix-form-of-the-output" class="nav-link" data-scroll-target="#matrix-form-of-the-output"><span class="header-section-number">4.1</span> Matrix Form of the Output</a></li>
+  </ul></li>
+  <li><a href="#algorithm-self-attention" id="toc-algorithm-self-attention" class="nav-link" data-scroll-target="#algorithm-self-attention"><span class="header-section-number">5</span> Algorithm: Self-Attention</a></li>
   </ul>
 </nav>
     </div>
@@ -368,10 +375,14 @@ Q = XW_Q^\top \in \mathbb{R}^{N \times d_k}.
 <p><span class="math display">\[
 K = XW_K^\top \in \mathbb{R}^{N \times d_k}.
 \]</span></p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/query_and_key_matrices.png" class="img-fluid figure-img"></p>
-<figcaption>Projection of image patches into query and key spaces.</figcaption>
+<div id="fig-query-key-matrices" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-query-key-matrices-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/query_and_key_matrices.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-query-key-matrices-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Projection of image patches into query and key spaces.
+</figcaption>
 </figure>
 </div>
 </section>
@@ -466,10 +477,14 @@ S
 =
 QK^\top.
 \]</span></p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/q_k_transpose.png" class="img-fluid figure-img"></p>
-<figcaption>Constructing the attention score matrix as <span class="math inline">\(S = QK^\top\)</span>.</figcaption>
+<div id="fig-q_k_transpose" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-q_k_transpose-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/q_k_transpose.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-q_k_transpose-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Constructing the attention score matrix as <span class="math inline">\(S = QK^\top\)</span>.
+</figcaption>
 </figure>
 </div>
 </section>
@@ -515,10 +530,14 @@ M = W_Q^\top W_K.
 <h3 data-number="3.1" class="anchored" data-anchor-id="from-scores-to-attention-weights"><span class="header-section-number">3.1</span> From Scores to Attention Weights</h3>
 <p>We now have a score matrix <span class="math display">\[ S = QK^\top \in \mathbb{R}^{N \times N}. \]</span> The entry <span class="math inline">\(S_{nm}\)</span> measures how strongly patch <span class="math inline">\(n\)</span> matches patch <span class="math inline">\(m\)</span>. But these raw scores are (arbitrary) real numbers. To turn them into attention weights, we apply the softmax operation row by row.</p>
 <p>Why row by row? Because each row corresponds to one patch asking its own question. Suppose patch <span class="math inline">\(n\)</span> contains a boat. The raw score answers the question: for this boat patch, how relevant is every other patch? Softmax just normalizes across this row and turns them into probabilities.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/row_wise_softmax.png" class="img-fluid figure-img"></p>
-<figcaption>Row-wise softmax in self-attention</figcaption>
+<div id="fig-row-wise-softmax" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-row-wise-softmax-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/row_wise_softmax.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-row-wise-softmax-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Row-wise softmax in self-attention
+</figcaption>
 </figure>
 </div>
 </section>
@@ -878,6 +897,16 @@ d_k\)</span>. The exact variance of the dot product is:</p>
 </tbody>
 </table>
 <p>By <span class="math inline">\(d_k = 64\)</span> — a small, standard value — the ratio of the top patch to the second patch is already 3000:1. Far water has effectively stopped contributing to the weighted average. The boat is just attending to one patch and ignoring everything else. Nothing changed — not the ranking, not the image, not the relative relevance of the patches. Only the scale of the scores grew with <span class="math inline">\(d_k\)</span>. That alone was enough to collapse soft attention into hard attention.</p>
+<div id="fig-hard_vs_soft_attention" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-hard_vs_soft_attention-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/hard_vs_soft_attention.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-hard_vs_soft_attention-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Effect of <span class="math inline">\(d_k\)</span> on Attention Weights — Same Patches, Different Scale”
+</figcaption>
+</figure>
+</div>
 <p>The ranking did not change. The image did not change. The relative relevance of the patches did not change. Only the scale of the scores changed — and that was enough.</p>
 <p>This is the problem. Not hard attention in principle. Hard attention for the wrong reason.</p>
 <p><strong>Enter <span class="math inline">\(\frac{1}{\sqrt{d_k}}\)</span>.</strong> One number. Divide the scores by it before softmax sees them. That is the entire fix.</p>
@@ -886,10 +915,446 @@ d_k\)</span>. The exact variance of the dot product is:</p>
 <p>independent of <span class="math inline">\(d_k\)</span>. The attention ratio stays bounded:</p>
 <p><span class="math display">\[\frac{a_{n3}}{a_{n4}} = \exp\left(\frac{S_{n3} - S_{n4}}{\sqrt{d_k}}\right)
 \sim e^1 \approx 2.7\]</span></p>
-<p>regardless of how large <span class="math inline">\(d_k\)</span> gets. The score gaps that were growing without bound are now pinned to order 1. Soft attention is preserved. The weighted average remains a genuine average — not a lookup. And the number that does all of this is <span class="math inline">\(\sqrt{d_k}\)</span> — the very same quantity that was causing the problem in the first place.</p>
-
-
+<p>regardless of how large <span class="math inline">\(d_k\)</span> gets. The score gaps that were growing without bound are now pinned to order 1. Soft attention is preserved. The weighted average remains a genuine average.</p>
+<p>Why <span class="math inline">\(\sqrt{d_k}\)</span> specifically, and not some other constant? Because it is the exact correction needed to restore unit variance. Under our earlier assumptions:</p>
+<p><span class="math display">\[\text{Var}\left(\frac{\mathcal{S}_{nm}}{\sqrt{d_k}}\right)
+= \frac{1}{d_k}\text{Var}(\mathcal{S}_{nm}) = \frac{d_k}{d_k} = 1\]</span></p>
+<p>The scaled score has variance (and standard deviation) exactly 1, independent of <span class="math inline">\(d_k\)</span>. It is the unique constant that restores unit variance.</p>
 </section>
+<section id="the-gradient-problem-when-softmax-stops-passing-derivatives" class="level3" data-number="3.5">
+<h3 data-number="3.5" class="anchored" data-anchor-id="the-gradient-problem-when-softmax-stops-passing-derivatives"><span class="header-section-number">3.5</span> The Gradient Problem: When Softmax Stops Passing Derivatives</h3>
+<p><strong>A brief review of derivative matrices.</strong> The notation we use follows a specific convention — worth stating clearly since different textbooks use different layouts.</p>
+<p>For a vector-valued function <span class="math inline">\(\mathbf{f} : \mathbb{R}^n \to
+\mathbb{R}^m\)</span>, the <strong>derivative matrix</strong> evaluated at a point <span class="math inline">\(\mathbf{a} \in \mathbb{R}^n\)</span> is:</p>
+<p><span class="math display">\[D_{\mathbf{x}}\mathbf{f}(\mathbf{a}) \in \mathbb{R}^{m \times n}\]</span></p>
+<p>The <span class="math inline">\((i,j)\)</span>-th entry is <span class="math inline">\(\frac{\partial f_i}{\partial x_j}\)</span> evaluated at <span class="math inline">\(\mathbf{x} = \mathbf{a}\)</span> — rows correspond to output components, columns to input components. This is the Jacobian matrix, written in numerator layout.</p>
+<p>For a scalar-valued function <span class="math inline">\(\mathcal{L} : \mathbb{R}^n \to
+\mathbb{R}\)</span>, the derivative matrix is a <span class="math inline">\(1 \times n\)</span> row vector:</p>
+<p><span class="math display">\[D_{\mathbf{x}}\mathcal{L}(\mathbf{a}) \in \mathbb{R}^{1 \times n},
+\qquad [D_{\mathbf{x}}\mathcal{L}]_j = \frac{\partial \mathcal{L}}
+{\partial x_j}\]</span></p>
+<p>The <strong>gradient</strong> is its transpose — always a column vector:</p>
+<p><span class="math display">\[\nabla_{\mathbf{x}}\mathcal{L}(\mathbf{a}) =
+(D_{\mathbf{x}}\mathcal{L}(\mathbf{a}))^\top \in \mathbb{R}^n\]</span></p>
+<p><strong>The chain rule — scalar output.</strong> For a composition <span class="math inline">\((\mathcal{L} \circ \mathbf{g})(\mathbf{x})\)</span> with <span class="math inline">\(\mathbf{g} : \mathbb{R}^n \to \mathbb{R}^m\)</span> and <span class="math inline">\(\mathcal{L} : \mathbb{R}^m \to \mathbb{R}\)</span>, evaluated at <span class="math inline">\(\mathbf{a} \in \mathbb{R}^n\)</span>:</p>
+<p><span class="math display">\[D_{\mathbf{x}}(\mathcal{L} \circ \mathbf{g})(\mathbf{a}) =
+\underbrace{D_{\mathbf{g}}\mathcal{L}\big(\mathbf{g}(\mathbf{a})\big)}_{1 \times m}
+\cdot \underbrace{D_{\mathbf{x}}\mathbf{g}(\mathbf{a})}_{m \times n}
+\in \mathbb{R}^{1 \times n}\]</span></p>
+<p>The gradient is the transpose of the derivative matrix:</p>
+<p><span class="math display">\[\nabla_{\mathbf{x}}(\mathcal{L} \circ \mathbf{g})(\mathbf{a}) =
+\left(D_{\mathbf{x}}\mathbf{g}(\mathbf{a})\right)^\top
+\underbrace{\left(D_{\mathbf{g}}\mathcal{L}\big(\mathbf{g}(\mathbf{a})\big)\right)^\top}_{
+=\,\nabla_{\mathbf{g}}\mathcal{L}(\mathbf{g}(\mathbf{a}))\,\in\,\mathbb{R}^m}
+\in \mathbb{R}^n\]</span></p>
+<p><strong>The chain rule — vector output.</strong> For a composition <span class="math inline">\((\mathbf{h} \circ \mathbf{g})(\mathbf{x})\)</span> with <span class="math inline">\(\mathbf{g} : \mathbb{R}^n \to \mathbb{R}^m\)</span> and <span class="math inline">\(\mathbf{h} : \mathbb{R}^m \to \mathbb{R}^p\)</span>, evaluated at <span class="math inline">\(\mathbf{a} \in \mathbb{R}^n\)</span>:</p>
+<p><span class="math display">\[D_{\mathbf{x}}(\mathbf{h} \circ \mathbf{g})(\mathbf{a}) =
+\underbrace{D_{\mathbf{g}}\mathbf{h}\big(\mathbf{g}(\mathbf{a})\big)}_{p \times m}
+\cdot \underbrace{D_{\mathbf{x}}\mathbf{g}(\mathbf{a})}_{m \times n}
+\in \mathbb{R}^{p \times n}\]</span></p>
+<p>The scalar-output case is the special case <span class="math inline">\(p = 1\)</span>, where <span class="math inline">\(D_{\mathbf{g}}\mathbf{h}\big(\mathbf{g}(\mathbf{a})\big)\)</span> collapses to a <span class="math inline">\(1 \times m\)</span> row vector. When <span class="math inline">\(p &gt; 1\)</span>, the result is a full <span class="math inline">\(p \times n\)</span> Jacobian matrix — the gradient is not defined for vector-valued functions.</p>
+<p>Dimensions multiply as matrix products should — the inner dimensions match. This is the rule we will use to track how gradients flow through softmax back to <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span>.</p>
+<div class="callout callout-style-simple callout-note no-icon">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>You may have seen the Jacobian written as <span class="math inline">\(J_f\)</span> or <span class="math inline">\(\frac{\partial
+\mathbf{f}}{\partial \mathbf{x}}\)</span> in other texts. Some sources use denominator layout, where the Jacobian is <span class="math inline">\(n \times m\)</span> instead of <span class="math inline">\(m \times n\)</span>. We follow numerator layout throughout — rows are output components, columns are input components — and will track dimensions explicitly at every step.</p>
+<p>Throughout, we use the coordinate-free definition of the derivative. For <span class="math inline">\(\mathbf{f} : \mathbb{R}^n \to \mathbb{R}^m\)</span>, the derivative of <span class="math inline">\(\mathbf{f}\)</span> at <span class="math inline">\(\mathbf{a} \in \mathbb{R}^n\)</span> is the unique linear map <span class="math inline">\(D_{\mathbf{x}}\mathbf{f}(\mathbf{a}) : \mathbb{R}^n \to \mathbb{R}^m\)</span> such that:</p>
+<p><span class="math display">\[\lim_{\mathbf{h} \to \mathbf{0}}
+\frac{\|\mathbf{f}(\mathbf{a} + \mathbf{h}) - \mathbf{f}(\mathbf{a}) -
+D_{\mathbf{x}}\mathbf{f}(\mathbf{a})\,\mathbf{h}\|}{\|\mathbf{h}\|} = 0\]</span></p>
+<p>That is, the remainder <span class="math inline">\(\mathbf{f}(\mathbf{a} + \mathbf{h}) - \mathbf{f}(\mathbf{a}) -
+D_{\mathbf{x}}\mathbf{f}(\mathbf{a})\,\mathbf{h}\)</span> goes to zero strictly faster than <span class="math inline">\(\|\mathbf{h}\|\)</span> as <span class="math inline">\(\mathbf{h} \to \mathbf{0}\)</span> — written <span class="math inline">\(o(\|\mathbf{h}\|)\)</span> in little-oh notation. The linear map <span class="math inline">\(D_{\mathbf{x}}\mathbf{f}(\mathbf{a})\)</span> is therefore the best local linear approximation to <span class="math inline">\(\mathbf{f}\)</span> near <span class="math inline">\(\mathbf{a}\)</span>: it captures everything about <span class="math inline">\(\mathbf{f}\)</span> at first order, and the error in using it is negligible compared to the size of the perturbation <span class="math inline">\(\mathbf{h}\)</span>. In coordinates, <span class="math inline">\(D_{\mathbf{x}}\mathbf{f}(\mathbf{a})\)</span> is represented by the <span class="math inline">\(m \times n\)</span> matrix of partial derivatives with <span class="math inline">\((i,j)\)</span>-th entry <span class="math inline">\(\partial f_i / \partial x_j\)</span> evaluated at <span class="math inline">\(\mathbf{a}\)</span>.</p>
+</div>
+</div>
+</div>
+<p>In machine learning, we optimize some loss <span class="math inline">\(\mathcal{L}\)</span> by computing gradients with respect to the parameters we want to learn. Here, those parameters include <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span>. The gradient of <span class="math inline">\(\mathcal{L}\)</span> with respect to <span class="math inline">\(W_Q\)</span> passes through the attention weights <span class="math inline">\(\mathbf{a}\)</span>, which pass through the scores <span class="math inline">\(\mathbf{s}\)</span>, which pass through softmax. By the chain rule:</p>
+<p><span class="math display">\[D_{W_Q}\mathcal{L} = D_{\mathbf{a}}\mathcal{L} \cdot
+D_{\mathbf{s}}\mathbf{a} \cdot D_{W_Q}\mathbf{s}\]</span></p>
+<p>The middle term — <span class="math inline">\(D_{\mathbf{s}}\mathbf{a}\)</span>, the Jacobian of softmax — is the one that matters. If it collapses to zero, the entire gradient collapses to zero, regardless of how large <span class="math inline">\(D_{\mathbf{a}}
+\mathcal{L}\)</span> is. <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> receive no signal. They stop updating.</p>
+<p>So: does the Jacobian of softmax collapse in the hard attention regime?</p>
+<p><strong>Computing the Jacobian.</strong> Fix row <span class="math inline">\(n\)</span> and drop the subscript. Let <span class="math inline">\(\mathbf{s} = (s_1, \ldots, s_N)\)</span> be the scores and <span class="math inline">\(\mathbf{a} =
+\text{softmax}(\mathbf{s})\)</span> the attention weights. The <span class="math inline">\((m, j)\)</span> entry of <span class="math inline">\(D_{\mathbf{s}}\mathbf{a}\)</span> is <span class="math inline">\(\frac{\partial a_m}{\partial s_j}\)</span>.</p>
+<p><strong>Case 1: <span class="math inline">\(m = j\)</span></strong></p>
+<p><span class="math display">\[\frac{\partial a_m}{\partial s_m} =
+\frac{e^{s_m}\sum_{m'} e^{s_{m'}} - e^{s_m} \cdot e^{s_m}}
+{\left(\sum_{m'} e^{s_{m'}}\right)^2} = a_m - a_m^2 = a_m(1 - a_m)\]</span></p>
+<p><strong>Case 2: <span class="math inline">\(m \neq j\)</span></strong></p>
+<p><span class="math display">\[\frac{\partial a_m}{\partial s_j} =
+\frac{0 - e^{s_m} \cdot e^{s_j}}
+{\left(\sum_{m'} e^{s_{m'}}\right)^2} = -a_m a_j\]</span></p>
+<p>The full Jacobian: <span class="math display">\[D_{\mathbf{s}}\mathbf{a} =
+\begin{pmatrix}
+a_1(1-a_1) &amp; -a_1 a_2 &amp; \cdots &amp; -a_1 a_N \\
+-a_2 a_1 &amp; a_2(1-a_2) &amp; \cdots &amp; -a_2 a_N \\
+\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+-a_N a_1 &amp; -a_N a_2 &amp; \cdots &amp; a_N(1-a_N)
+\end{pmatrix} \in \mathbb{R}^{N \times N}\]</span></p>
+<p><strong>Now substitute the hard attention regime.</strong> From the boat/water example at <span class="math inline">\(d_k = 64\)</span>: <span class="math inline">\(a_3 \approx 1\)</span>, and <span class="math inline">\(a_1 \approx a_2 \approx
+a_4 \approx 0\)</span>.</p>
+<p>Diagonal terms:</p>
+<p><span class="math display">\[a_m(1 - a_m): \quad a_3(1 - a_3) \approx 1 \cdot 0 = 0, \quad
+a_m(1 - a_m) \approx 0 \cdot 1 = 0 \quad \text{for } m \neq 3\]</span></p>
+<p>Off-diagonal terms:</p>
+<p><span class="math display">\[-a_m a_j \approx 0 \quad \text{for all } m, j\]</span></p>
+<p>since at least one of <span class="math inline">\(a_m\)</span>, <span class="math inline">\(a_j\)</span> is <span class="math inline">\(\approx 0\)</span>. So:</p>
+<p><span class="math display">\[D_{\mathbf{s}}\mathbf{a} \approx 0\]</span></p>
+<p>The Jacobian is approximately the zero matrix. The gradient:</p>
+<p><span class="math display">\[D_{W_Q}\mathcal{L} = D_{\mathbf{a}}\mathcal{L} \cdot
+\underbrace{D_{\mathbf{s}}\mathbf{a}}_{\approx\, 0} \cdot
+D_{W_Q}\mathbf{s} \approx 0\]</span></p>
+<p><span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> receive essentially zero gradient — not because the loss is small, but because the Jacobian of softmax has collapsed. The model is blind to its own mistakes.</p>
+<p><strong>In the soft-attention regime</strong> — <span class="math inline">\(d_k\)</span> small, scores of order 1, <span class="math inline">\(a_3 \approx 0.76\)</span>, <span class="math inline">\(a_4 \approx 0.12\)</span> — the picture is completely different:</p>
+<p><span class="math display">\[a_3(1 - a_3) \approx 0.76 \times 0.24 \approx 0.18\]</span> <span class="math display">\[a_4(1 - a_4) \approx 0.12 \times 0.88 \approx 0.11\]</span> <span class="math display">\[-a_3 a_4 \approx -0.09\]</span></p>
+<p>The Jacobian is nonzero. Gradients flow. <span class="math inline">\(W_Q\)</span> and <span class="math inline">\(W_K\)</span> update. The model learns.</p>
+<p><strong>The fix.</strong> The <span class="math inline">\(\frac{1}{\sqrt{d_k}}\)</span> scaling attacks the root cause directly. The root cause was not softmax by itself. The root cause was that the dot-product scores grew in scale with <span class="math inline">\(d_k\)</span>. Large scores made the attention row collapse toward a hard selection. The same collapse made the softmax Jacobian nearly zero. Dividing the scores by <span class="math inline">\(\sqrt{d_k}\)</span> keeps their scale under control before softmax sees them. One division fixes both problems.</p>
+<p>Before moving to value vectors, let us collect the pieces.</p>
+</section>
+<section id="scaled-dot-product-attention-the-attention-matrix" class="level3" data-number="3.6">
+<h3 data-number="3.6" class="anchored" data-anchor-id="scaled-dot-product-attention-the-attention-matrix"><span class="header-section-number">3.6</span> Scaled Dot-Product Attention: The Attention Matrix</h3>
+<p>We start with the patch matrix</p>
+<p><span class="math display">\[
+X \in \mathbb{R}^{N \times D}.
+\]</span></p>
+<p>The rows of <span class="math inline">\(X\)</span> are the patch vectors:</p>
+<p><span class="math display">\[
+X
+=
+\begin{bmatrix}
+\mathbf{x}_1^\top \\
+\mathbf{x}_2^\top \\
+\vdots \\
+\mathbf{x}_N^\top
+\end{bmatrix}.
+\]</span></p>
+<p>Using the query and key projection matrices</p>
+<p><span class="math display">\[
+W_Q, W_K \in \mathbb{R}^{d_k \times D},
+\]</span></p>
+<p>we form</p>
+<p><span class="math display">\[
+Q = XW_Q^\top \in \mathbb{R}^{N \times d_k},
+\qquad
+K = XW_K^\top \in \mathbb{R}^{N \times d_k}.
+\]</span></p>
+<p>The raw score matrix is</p>
+<p><span class="math display">\[
+S = QK^\top \in \mathbb{R}^{N \times N}.
+\]</span></p>
+<p>The scaled score matrix is</p>
+<p><span class="math display">\[
+\widetilde{S}
+=
+\frac{QK^\top}{\sqrt{d_k}}
+\in \mathbb{R}^{N \times N}.
+\]</span></p>
+<p>Finally, we apply softmax row-wise:</p>
+<p><span class="math display">\[
+A
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\widetilde{S}
+\right).
+\]</span></p>
+<p>Equivalently,</p>
+<p><span class="math display">\[
+A
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right).
+\]</span></p>
+<p>For each row <span class="math inline">\(n\)</span>,</p>
+<p><span class="math display">\[
+a_{nm}
+=
+\frac{
+\exp\left(S_{nm}/\sqrt{d_k}\right)
+}{
+\sum_{m'=1}^{N}
+\exp\left(S_{nm'}/\sqrt{d_k}\right)
+}.
+\]</span></p>
+<p>This matrix <span class="math inline">\(A\)</span> is the attention matrix. Its <span class="math inline">\(n\)</span>-th row tells us how patch <span class="math inline">\(n\)</span> distributes its attention over all patches.</p>
+<p>There is one piece left in the self-attention story. The attention matrix tells us where each patch looks. It does not yet tell us what information gets carried back. That is where value vectors enter.</p>
+</section>
+</section>
+<section id="the-value-vectors" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="the-value-vectors"><span class="header-section-number">4</span> The Value Vectors</h2>
+<p>The attention weights only tell us <strong>where to look</strong>. They do not yet tell us <strong>what to bring back</strong>.</p>
+<p>That is the role of the value vectors.</p>
+<p>For each patch vector <span class="math inline">\(\mathbf{x}_m \in \mathbb{R}^{D}\)</span>, define its value vector as</p>
+<p><span class="math display">\[
+\mathbf{v}_m
+=
+W_V \mathbf{x}_m,
+\qquad
+\mathbf{v}_m \in \mathbb{R}^{d_v},
+\]</span></p>
+<p>where</p>
+<p><span class="math display">\[
+W_V \in \mathbb{R}^{d_v \times D}.
+\]</span></p>
+<p>As before, if we stack all patch vectors row-wise in</p>
+<p><span class="math display">\[
+X \in \mathbb{R}^{N \times D},
+\]</span></p>
+<p>then the value matrix is</p>
+<p><span class="math display">\[
+V
+=
+XW_V^\top
+\in
+\mathbb{R}^{N \times d_v}.
+\]</span></p>
+<p>So each row of <span class="math inline">\(V\)</span> contains the value vector of one patch:</p>
+<p><span class="math display">\[
+V
+=
+\begin{bmatrix}
+\mathbf{v}_1^\top \\
+\mathbf{v}_2^\top \\
+\vdots \\
+\mathbf{v}_N^\top
+\end{bmatrix}.
+\]</span></p>
+<p>Now recall that row <span class="math inline">\(n\)</span> of the attention matrix contains the weights</p>
+<p><span class="math display">\[
+\begin{bmatrix}
+a_{n1} &amp; a_{n2} &amp; \cdots &amp; a_{nN}
+\end{bmatrix}.
+\]</span></p>
+<p>These weights tell us how much patch <span class="math inline">\(n\)</span> attends to every patch.</p>
+<p>The output vector for patch <span class="math inline">\(n\)</span> is the weighted sum of the value vectors:</p>
+<p><span class="math display">\[
+\mathbf{y}_n
+=
+\sum_{m=1}^{N}
+a_{nm}\mathbf{v}_m.
+\]</span></p>
+<p>This is the key point. Patch <span class="math inline">\(n\)</span> gathers information from all patches, weighted by attention.</p>
+<p>If the boat patch assigns high weight to nearby water, then the value vector of nearby water contributes strongly to the boat patch’s new representation.If it assigns small weight to sky, then the sky value vector contributes very little.</p>
+<p>So queries and keys decide the weights. Values carry the information.</p>
+<div id="fig-value-vectors" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-value-vectors-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/value_vector.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-value-vectors-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Queries and keys decide the attention weights; value vectors are what get aggregated to produce the output vector <span class="math inline">\(\mathbf{y}_n\)</span>.
+</figcaption>
+</figure>
+</div>
+<section id="matrix-form-of-the-output" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="matrix-form-of-the-output"><span class="header-section-number">4.1</span> Matrix Form of the Output</h3>
+<p>For one patch <span class="math inline">\(n\)</span>, we wrote the output vector as</p>
+<p><span class="math display">\[
+\mathbf{y}_n
+=
+\sum_{m=1}^{N}
+a_{nm}\mathbf{v}_m.
+\]</span></p>
+<p>This is one row of the final output. Now do the same thing for every patch. Stack the output vectors row-wise:</p>
+<p><span class="math display">\[
+Y
+=
+\begin{bmatrix}
+\mathbf{y}_1^\top \\
+\mathbf{y}_2^\top \\
+\vdots \\
+\mathbf{y}_N^\top
+\end{bmatrix}
+\in
+\mathbb{R}^{N \times d_v}.
+\]</span></p>
+<p>Recall that</p>
+<p><span class="math display">\[
+A \in \mathbb{R}^{N \times N},
+\qquad
+V \in \mathbb{R}^{N \times d_v}.
+\]</span></p>
+<p>So the matrix product</p>
+<p><span class="math display">\[
+AV
+\]</span></p>
+<p>has shape</p>
+<p><span class="math display">\[
+(N \times N)(N \times d_v)
+=
+N \times d_v.
+\]</span></p>
+<p>The <span class="math inline">\(n\)</span>-th row of <span class="math inline">\(AV\)</span> is</p>
+<p><span class="math display">\[
+\sum_{m=1}^{N}
+a_{nm}\mathbf{v}_m^\top.
+\]</span></p>
+<p>Therefore,</p>
+<p><span class="math display">\[
+Y = AV.
+\]</span></p>
+<p>This is the full self-attention output.</p>
+<p>Each row of <span class="math inline">\(A\)</span> decides how one patch looks at all patches.</p>
+<p>Each row of <span class="math inline">\(V\)</span> carries the information available at one patch.</p>
+<p>Multiplying them gives one new vector per patch.</p>
+</section>
+</section>
+<section id="algorithm-self-attention" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="algorithm-self-attention"><span class="header-section-number">5</span> Algorithm: Self-Attention</h2>
+<p>We can now collect the whole story.</p>
+<p>Start with the patch matrix</p>
+<p><span class="math display">\[
+X \in \mathbb{R}^{N \times D}.
+\]</span></p>
+<p>Each row of <span class="math inline">\(X\)</span> is one patch vector:</p>
+<p><span class="math display">\[
+X
+=
+\begin{bmatrix}
+\mathbf{x}_1^\top \\
+\mathbf{x}_2^\top \\
+\vdots \\
+\mathbf{x}_N^\top
+\end{bmatrix}.
+\]</span></p>
+<p>We learn three projection matrices:</p>
+<p><span class="math display">\[
+W_Q \in \mathbb{R}^{d_k \times D},
+\qquad
+W_K \in \mathbb{R}^{d_k \times D},
+\qquad
+W_V \in \mathbb{R}^{d_v \times D}.
+\]</span></p>
+<p>These produce the query, key, and value matrices:</p>
+<p><span class="math display">\[
+Q = XW_Q^\top \in \mathbb{R}^{N \times d_k},
+\]</span></p>
+<p><span class="math display">\[
+K = XW_K^\top \in \mathbb{R}^{N \times d_k},
+\]</span></p>
+<p><span class="math display">\[
+V = XW_V^\top \in \mathbb{R}^{N \times d_v}.
+\]</span></p>
+<p>Next, compute the scaled score matrix:</p>
+<p><span class="math display">\[
+\widetilde{S}
+=
+\frac{QK^\top}{\sqrt{d_k}}
+\in
+\mathbb{R}^{N \times N}.
+\]</span></p>
+<p>Apply softmax row-wise to obtain the attention matrix:</p>
+<p><span class="math display">\[
+A
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right)
+\in
+\mathbb{R}^{N \times N}.
+\]</span></p>
+<p>Finally, aggregate the value vectors:</p>
+<p><span class="math display">\[
+Y = AV.
+\]</span></p>
+<p>Since</p>
+<p><span class="math display">\[
+A \in \mathbb{R}^{N \times N},
+\qquad
+V \in \mathbb{R}^{N \times d_v},
+\]</span></p>
+<p>we get</p>
+<p><span class="math display">\[
+Y \in \mathbb{R}^{N \times d_v}.
+\]</span></p>
+<p>This is the output of self-attention.</p>
+<p>In one line:</p>
+<p><span class="math display">\[
+\boxed{
+Y
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right)
+V
+}
+\]</span></p>
+<p>with</p>
+<p><span class="math display">\[
+Q = XW_Q^\top,
+\qquad
+K = XW_K^\top,
+\qquad
+V = XW_V^\top.
+\]</span></p>
+<p>This is the <strong>single-head scaled dot-product self-attention</strong>.</p>
+<div class="callout callout-style-simple callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>A note on the usual machine learning notation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In this post, we defined individual query, key, and value vectors using column vectors:</p>
+<p><span class="math display">\[
+\mathbf{q}_n = W_Q\mathbf{x}_n,
+\qquad
+\mathbf{k}_n = W_K\mathbf{x}_n,
+\qquad
+\mathbf{v}_n = W_V\mathbf{x}_n.
+\]</span></p>
+<p>So the projection matrices have shapes</p>
+<p><span class="math display">\[
+W_Q, W_K \in \mathbb{R}^{d_k \times D},
+\qquad
+W_V \in \mathbb{R}^{d_v \times D}.
+\]</span></p>
+<p>Since the data matrix <span class="math inline">\(X\)</span> stores patch vectors row-wise, the matrix formulas become</p>
+<p><span class="math display">\[
+Q = XW_Q^\top,
+\qquad
+K = XW_K^\top,
+\qquad
+V = XW_V^\top.
+\]</span></p>
+<p>In much of the machine learning literature, the same operation is written as</p>
+<p><span class="math display">\[
+Q = XW_Q,
+\qquad
+K = XW_K,
+\qquad
+V = XW_V,
+\]</span></p>
+<p>with</p>
+<p><span class="math display">\[
+W_Q, W_K \in \mathbb{R}^{D \times d_k},
+\qquad
+W_V \in \mathbb{R}^{D \times d_v}.
+\]</span></p>
+<p>This is not a different attention mechanism. It is only a different convention for storing the projection matrices.</p>
+<p>The attention formula is the same:</p>
+<p><span class="math display">\[
+\operatorname{Attention}(Q,K,V)
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right)V.
+\]</span></p>
+
+
+</div>
+</div>
 </section>
 
 </main> <!-- /main -->
