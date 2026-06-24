@@ -1,0 +1,913 @@
+
+
+---
+title: "Self-Attention From First Principles — Part 2"
+subtitle: "Scaled dot-product attention, multi-head attention, and the code"
+author: "Madhav Prashanth Ramachandran"
+date: "2026-06-24"
+categories: [transformers, vision, attention, linear-algebra, numpy, pytorch]
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    html-math-method: mathjax
+    fig-align: center
+    theme: cosmo
+    css: styles.css
+    page-layout: article
+---
+
+## Picking Up Where We Left Off
+
+[Part 1](https://madhavpr191221.github.io/transformers_for_perception/posts/self-attention-from-first-principles/index.html) ended with self-attention almost fully derived — queries, keys, 
+a similarity score, and a weighted average. Almost, because we left two things unfinished.
+
+**First, the softmax itself. **
+
+Machine learning practioners recognize softmax immediately. But, it turns out that the raw form of softmax needs a simple but non-trivial modification to make the computation numerically and statistically well-behaved. Rather than simply stating it as a fact, we will derive it from first principles with a simple numerical example to support the theory. 
+
+**Second, the value vector.**
+
+We averaged raw patch vectors $\mathbf{x}_m$ 
+throughout Part 1, and flagged at the end that real self-attention 
+averages a separately learned projection instead. We deferred the 
+construction intetionally. This post builds it. 
+
+Spoiler Alert: The value vector isn't magical. It is just matrix-vector multiplication
+
+**Third, multi-head attention.**
+
+Third, we worked with one query and one key projection throughout. In practice, self-attention runs several different key and query projections in parallel. You can think about attaching different "importance scores" to each patch in different ways. This is called Multi-Head Attention and it is the last piece of the self-attention story.
+
+If you haven't read Part 1, start there. It explains the idea of self-attention from first principles, using a satellite image as a running example instead of beginning with natural language tokens. The mathematics is not there for decoration. It is the medium through which the story comes alive.
+
+## From Vectors to Matrices
+
+In Part 1, we derived a similarity score between two patches $\mathbf{x}_n$ and $\mathbf{x}_m$:
+
+$$
+\text{score}(n,m) = \mathbf{q}_n^\top \mathbf{k}_m,
+\qquad
+\mathbf{q}_n = W_Q \mathbf{x}_n,
+\qquad
+\mathbf{k}_m = W_K \mathbf{x}_m.
+$$
+
+Roughly speaking, $\text{score}(n,m)$ measures how well what patch $n$ is asking for matches what patch $m$ has to offer.
+
+We worked with individual patch vectors throughout Part 1. Now we need to scale this up: not one query and one key, but $N$ queries and $N$ keys — one for every patch in the image. And we want to compute all $N^2$ similarity scores at once, not one at a time.
+
+To do that cleanly, we first need to be precise about dimensions.
+
+### Dimensions
+
+Each patch vector is a column vector:
+
+$$
+\mathbf{x}_n \in \mathbb{R}^{D}.
+$$
+
+The matrix $W_Q$ acts on vectors in $\mathbb{R}^{D}$, so it must have $D$ columns. Similarly, $W_K$ also acts on vectors in $\mathbb{R}^{D}$, so it too must have $D$ columns.
+
+Suppose
+
+$$
+W_Q \in \mathbb{R}^{d_q \times D},
+\qquad
+W_K \in \mathbb{R}^{d_k \times D}.
+$$
+
+Then matrix-vector multiplication gives
+
+$$
+\mathbf{q}_n = W_Q \mathbf{x}_n \in \mathbb{R}^{d_q},
+\qquad
+\mathbf{k}_m = W_K \mathbf{x}_m \in \mathbb{R}^{d_k}.
+$$
+
+But the attention score is defined as a dot product:
+
+$$
+\text{score}(n,m)
+=
+\mathbf{q}_n^\top \mathbf{k}_m.
+$$
+
+For this dot product to make sense, $\mathbf{q}_n$ and $\mathbf{k}_m$ must live in the same space. Therefore,
+
+$$
+d_q = d_k.
+$$
+
+We call this common dimension $d_k$. So from here on,
+
+$$
+W_Q \in \mathbb{R}^{d_k \times D},
+\qquad
+W_K \in \mathbb{R}^{d_k \times D},
+$$
+
+and
+
+$$
+\mathbf{q}_n, \mathbf{k}_m \in \mathbb{R}^{d_k}.
+$$
+
+
+### Building the Query and Key Matrices
+
+The data matrix $X \in \mathbb{R}^{N \times D}$ stores patch vectors as rows:
+
+$$
+\operatorname{row}_n(X) = \mathbf{x}_n^\top.
+$$
+
+We build $Q$ the same way, by storing query vectors as rows:
+
+$$
+Q \in \mathbb{R}^{N \times d_k},
+\qquad
+\operatorname{row}_n(Q) = \mathbf{q}_n^\top.
+$$
+
+Now use the individual-vector definition:
+
+$$
+\mathbf{q}_n = W_Q \mathbf{x}_n.
+$$
+
+Taking transpose,
+
+$$
+\mathbf{q}_n^\top
+=
+(W_Q \mathbf{x}_n)^\top
+=
+\mathbf{x}_n^\top W_Q^\top.
+$$
+
+Therefore,
+
+$$
+\operatorname{row}_n(Q)
+=
+\operatorname{row}_n(X) W_Q^\top.
+$$
+
+Since this holds for every row,
+
+$$
+Q = XW_Q^\top.
+$$
+
+The dimensions are:
+
+$$
+X \in \mathbb{R}^{N \times D},
+\qquad
+W_Q^\top \in \mathbb{R}^{D \times d_k},
+\qquad
+Q \in \mathbb{R}^{N \times d_k}.
+$$
+
+So,
+
+$$
+Q = XW_Q^\top \in \mathbb{R}^{N \times d_k}.
+$$
+
+By the same argument,
+
+$$
+K = XW_K^\top \in \mathbb{R}^{N \times d_k}.
+$$
+
+The transpose appears only because individual patch vectors are column vectors, while the data matrix stores patches as rows.
+
+Explicitly, the query matrix is obtained by stacking the query vectors row by row:
+
+$$
+Q
+=
+\begin{bmatrix}
+\mathbf{q}_1^\top \\
+\mathbf{q}_2^\top \\
+\vdots \\
+\mathbf{q}_N^\top
+\end{bmatrix}.
+$$
+
+Since $\mathbf{q}_i = W_Q \mathbf{x}_i$, each row becomes
+
+$$
+\mathbf{q}_i^\top
+=
+(W_Q \mathbf{x}_i)^\top
+=
+\mathbf{x}_i^\top W_Q^\top.
+$$
+
+So,
+
+$$
+Q
+=
+\begin{bmatrix}
+\mathbf{x}_1^\top W_Q^\top \\
+\mathbf{x}_2^\top W_Q^\top \\
+\vdots \\
+\mathbf{x}_N^\top W_Q^\top
+\end{bmatrix}
+=
+\begin{bmatrix}
+\mathbf{x}_1^\top \\
+\mathbf{x}_2^\top \\
+\vdots \\
+\mathbf{x}_N^\top
+\end{bmatrix}
+W_Q^\top
+=
+XW_Q^\top.
+$$
+
+Therefore,
+
+$$
+Q = XW_Q^\top \in \mathbb{R}^{N \times d_k}.
+$$
+
+By the same reasoning,
+
+$$
+K = XW_K^\top \in \mathbb{R}^{N \times d_k}.
+$$
+
+
+![Projection of image patches into query and key spaces.](images/query_and_key_matrices.png)
+
+### The Score Matrix
+
+We want a score matrix $S \in \mathbb{R}^{N \times N}$ whose $(n,m)$-th entry is
+
+$$
+S_{nm}
+=
+\text{score}(n,m)
+=
+\mathbf{q}_n^\top \mathbf{k}_m.
+$$
+
+Fix row $n$ of $S$. Its entries are
+
+$$
+S_{n1}, S_{n2}, \ldots, S_{nN}.
+$$
+
+Written as a row vector,
+
+$$
+\operatorname{row}_n(S)
+=
+\begin{bmatrix}
+\mathbf{q}_n^\top \mathbf{k}_1
+&
+\mathbf{q}_n^\top \mathbf{k}_2
+&
+\cdots
+&
+\mathbf{q}_n^\top \mathbf{k}_N
+\end{bmatrix}.
+$$
+
+Factor out $\mathbf{q}_n^\top$:
+
+$$
+\operatorname{row}_n(S)
+=
+\mathbf{q}_n^\top
+\begin{bmatrix}
+\mathbf{k}_1
+&
+\mathbf{k}_2
+&
+\cdots
+&
+\mathbf{k}_N
+\end{bmatrix}.
+$$
+
+But
+
+$$
+\begin{bmatrix}
+\mathbf{k}_1
+&
+\mathbf{k}_2
+&
+\cdots
+&
+\mathbf{k}_N
+\end{bmatrix}
+=
+K^\top.
+$$
+
+Therefore,
+
+$$
+\operatorname{row}_n(S)
+=
+\mathbf{q}_n^\top K^\top.
+$$
+
+Since the $n$-th row of $Q$ is $\mathbf{q}_n^\top$,
+
+$$
+\operatorname{row}_n(S)
+=
+\operatorname{row}_n(Q)K^\top.
+$$
+
+Stacking this for all $n = 1,\ldots,N$, we get
+
+$$
+S = QK^\top.
+$$
+
+The dimensions are:
+
+$$
+Q \in \mathbb{R}^{N \times d_k},
+\qquad
+K^\top \in \mathbb{R}^{d_k \times N},
+\qquad
+S \in \mathbb{R}^{N \times N}.
+$$
+
+So the full score matrix is
+
+$$
+S = QK^\top \in \mathbb{R}^{N \times N}.
+$$
+
+Now expand this in terms of $X$, $W_Q$, and $W_K$:
+
+$$
+S
+=
+QK^\top.
+$$
+
+![Constructing the attention score matrix as $S = QK^\top$.](images/q_k_transpose.png)
+
+### Analogy with the Mahalanobis Distance
+
+Using
+
+$$
+Q = XW_Q^\top,
+\qquad
+K = XW_K^\top,
+$$
+
+the score matrix can be rewritten as
+
+$$
+S
+=
+QK^\top
+=
+(XW_Q^\top)(XW_K^\top)^\top
+=
+XW_Q^\top W_KX^\top.
+$$
+
+Define
+
+$$
+M := W_Q^\top W_K.
+$$
+
+Then
+
+$$
+S = XMX^\top,
+\qquad
+S_{nm} = \mathbf{x}_n^\top M \mathbf{x}_m.
+$$
+
+So the attention score is a learned bilinear similarity between two patch vectors.
+
+This is the connection to Part 1: in the Mahalanobis form, the middle matrix is $\Sigma^{-1}$. In self-attention, the middle matrix is learned:
+
+$$
+M = W_Q^\top W_K.
+$$
+
+Unlike $\Sigma^{-1}$, this matrix need not be symmetric. That is important because attention itself need not be symmetric: patch $n$ attending to patch $m$ does not imply that patch $m$ attends equally strongly back to patch $n$.
+
+## Scaled Dot-Product Attention
+
+### From Scores to Attention Weights
+
+We now have a score matrix $$ S = QK^\top \in \mathbb{R}^{N \times N}. $$ The entry $S_{nm}$ measures how strongly patch $n$ matches patch $m$. But these raw scores are (arbitrary) real numbers. To turn them into attention weights, we apply the softmax operation row by row. 
+
+Why row by row? Because each row corresponds to one patch asking its own question. Suppose patch $n$ contains a boat. The raw score answers the question: for this boat patch, how relevant is every other patch? Softmax just normalizes across this row and turns them into probabilities. 
+
+![Row-wise softmax in self-attention](images/row_wise_softmax.png)
+
+### Softmax Has a Scale Problem
+
+There is one thing we have quietly ignored.
+
+Softmax is not just a ranking function.
+
+Take one row of scores. Suppose the boat patch gives the following scores to three surrounding patches:
+
+$$
+\begin{bmatrix}
+1 & 2 & 3
+\end{bmatrix},
+$$
+
+Softmax applied above gives approximately
+
+$$
+\operatorname{softmax}
+\left(
+\begin{bmatrix}
+1 & 2 & 3
+\end{bmatrix}
+\right)
+\approx
+\begin{bmatrix}
+0.09 & 0.24 & 0.67
+\end{bmatrix}.
+$$
+
+The third patch matters the most, but the other two patches still have finite contribution.
+
+If the same patch produces a score, 
+
+$$
+\begin{bmatrix}
+10 & 20 & 30
+\end{bmatrix},
+$$
+
+softmax is essentially
+
+$$
+\operatorname{softmax}
+\left(
+\begin{bmatrix}
+10 & 20 & 30
+\end{bmatrix}
+\right)
+\approx
+\begin{bmatrix}
+0 & 0 & 1
+\end{bmatrix}.
+$$
+
+
+The ordering of the scores has not changed but the third patch has completely swallowed the other two. 
+
+The question is not only: Which patch has the highest score but also how large are the gaps between scores? 
+
+Take one query patch $n$. Suppose we compare how much attention patch $n$ gives to two patches: patch $m$ and patch $m'$. 
+
+The corresponding attention weights are $$ a_{nm} = \frac{\exp(S_{nm})} {\sum_{j=1}^{N}\exp(S_{nj})}, \qquad a_{nm'} = \frac{\exp(S_{nm'})} {\sum_{j=1}^{N}\exp(S_{nj})}. $$ 
+
+$$ \frac{a_{nm}}{a_{nm'}} = \frac{\exp(S_{nm})}{\exp(S_{nm'})}. $$ 
+
+Therefore, $$ \frac{a_{nm}}{a_{nm'}} = \exp(S_{nm} - S_{nm'}). $$ 
+
+This is the important point. Softmax does not compare $S_{nm}$ and $S_{nm'}$ in isolation. It compares them through the difference $$ S_{nm} - S_{nm'}. $$ So the gap between the two scores controls how much more attention patch $m$ receives compared to patch $m'$.
+
+
+### How Large Are the Score Gaps?
+
+This is now the real question.
+
+For any (satellite) image, $S_{nm}$ is just a number. So is $S_{nm'}$. Their difference is also just a number.
+
+But to understand the gaps better, let's change our point-of-view and think of these scores as realizations of random variables.
+
+Let
+
+$$
+\mathcal{S}_{nm}
+$$
+
+denote the random score between query patch $n$ and key patch $m$.
+
+The realized value inside the score matrix is
+
+$$
+S_{nm}.
+$$
+
+Similarly, the score gap
+
+$$
+S_{nm} - S_{nm'}
+$$
+
+is a realization of the random variable
+
+$$
+\mathcal{S}_{nm} - \mathcal{S}_{nm'}.
+$$
+
+So when we ask how large the score gap is, we are really asking:
+
+> What is the typical scale of the random variable $\mathcal{S}_{nm} - \mathcal{S}_{nm'}$?
+
+A natural way to measure this typical scale is its standard deviation.
+
+The standard deviation does not tell us the exact gap for a particular image. It gives us a rough sense of how large such gaps usually are.
+
+And that is exactly what softmax cares about, because the ratio of two attention weights is
+
+$$
+\frac{a_{nm}}{a_{nm'}}
+=
+\exp(S_{nm} - S_{nm'}).
+$$
+
+So if the typical size of
+
+$$
+S_{nm} - S_{nm'}
+$$
+
+grows, then the exponentials inside softmax become more extreme.
+
+
+So let us estimate the standard deviation of the random gap
+
+$$
+\mathcal{S}_{nm} - \mathcal{S}_{nm'}.
+$$
+
+Assume that the entries of the random query vector and random key vector have mean zero and variance one:
+
+$$
+\mathbb{E}[\mathcal{Q}_{nj}] = 0,
+\qquad
+\mathbb{E}[\mathcal{K}_{mj}] = 0,
+$$
+
+and
+
+$$
+\operatorname{Var}(\mathcal{Q}_{nj}) = 1,
+\qquad
+\operatorname{Var}(\mathcal{K}_{mj}) = 1.
+$$
+
+Also assume that the terms in the dot product are independent.
+
+The random score between patch $n$ and patch $m$ is
+
+$$
+\mathcal{S}_{nm}
+=
+\mathcal{Q}_n^\top \mathcal{K}_m
+=
+\sum_{j=1}^{d_k} \mathcal{Q}_{nj}\mathcal{K}_{mj}.
+$$
+
+Now consider one term in this sum:
+
+$$
+\mathcal{Q}_{nj}\mathcal{K}_{mj}.
+$$
+
+Since $\mathcal{Q}_{nj}$ and $\mathcal{K}_{mj}$ are independent,
+
+$$
+\mathbb{E}[\mathcal{Q}_{nj}\mathcal{K}_{mj}]
+=
+\mathbb{E}[\mathcal{Q}_{nj}]
+\mathbb{E}[\mathcal{K}_{mj}]
+=
+0.
+$$
+
+Also,
+
+$$
+\mathbb{E}[\mathcal{Q}_{nj}^2\mathcal{K}_{mj}^2]
+=
+\mathbb{E}[\mathcal{Q}_{nj}^2]
+\mathbb{E}[\mathcal{K}_{mj}^2].
+$$
+
+Since both random variables have mean zero and variance one,
+
+$$
+\mathbb{E}[\mathcal{Q}_{nj}^2] = 1,
+\qquad
+\mathbb{E}[\mathcal{K}_{mj}^2] = 1.
+$$
+
+Therefore,
+
+$$
+\mathbb{E}[\mathcal{Q}_{nj}^2\mathcal{K}_{mj}^2]
+=
+1.
+$$
+
+So,
+
+$$
+\operatorname{Var}(\mathcal{Q}_{nj}\mathcal{K}_{mj})
+=
+\mathbb{E}[\mathcal{Q}_{nj}^2\mathcal{K}_{mj}^2]
+-
+\left(
+\mathbb{E}[\mathcal{Q}_{nj}\mathcal{K}_{mj}]
+\right)^2
+=
+1 - 0
+=
+1.
+$$
+
+Each coordinate contributes variance one.
+
+Therefore,
+
+$$
+\operatorname{Var}(\mathcal{S}_{nm})
+=
+\operatorname{Var}
+\left(
+\sum_{j=1}^{d_k} \mathcal{Q}_{nj}\mathcal{K}_{mj}
+\right).
+$$
+
+By independence of the terms,
+
+$$
+\operatorname{Var}(\mathcal{S}_{nm})
+=
+\sum_{j=1}^{d_k}
+\operatorname{Var}(\mathcal{Q}_{nj}\mathcal{K}_{mj}).
+$$
+
+Hence,
+
+$$
+\operatorname{Var}(\mathcal{S}_{nm})
+=
+\underbrace{1 + 1 + \cdots + 1}_{d_k \text{ times}}
+=
+d_k.
+$$
+
+So,
+
+$$
+\operatorname{std}(\mathcal{S}_{nm})
+=
+\sqrt{d_k}.
+$$
+
+Now consider two scores in the same row:
+
+$$
+\mathcal{S}_{nm}
+\qquad
+\text{and}
+\qquad
+\mathcal{S}_{nm'}.
+$$
+
+The gap is
+
+$$
+\mathcal{S}_{nm} - \mathcal{S}_{nm'}.
+$$
+
+Assuming these two random scores are independent,
+
+$$
+\operatorname{Var}(\mathcal{S}_{nm} - \mathcal{S}_{nm'})
+=
+\operatorname{Var}(\mathcal{S}_{nm})
++
+\operatorname{Var}(\mathcal{S}_{nm'}).
+$$
+
+Since both scores have variance $d_k$,
+
+$$
+\operatorname{Var}(\mathcal{S}_{nm} - \mathcal{S}_{nm'})
+=
+d_k + d_k
+=
+2d_k.
+$$
+
+Therefore,
+
+$$
+\operatorname{std}(\mathcal{S}_{nm} - \mathcal{S}_{nm'})
+=
+\sqrt{2d_k}.
+$$
+
+So the usual size of the score gap grows like
+
+$$
+O(\sqrt{d_k}).
+$$
+
+This is the scaling problem. As $d_k$ grows, the gaps between scores also grow. But softmax depends exponentially on these gaps.
+
+
+#### Questioning Assumption 1: Mean Zero, Unit Variance
+
+Fair question. If the entries don't have mean zero, center them. 
+If they don't have unit variance, standardize them. Neither operation 
+changes the qualitative conclusion — the variance of $\mathcal{S}_{nm}$ 
+is still linear in $d_k$, just with a different constant of 
+proportionality. The assumption pins down the constant to 1, giving 
+$\text{Var}(\mathcal{S}_{nm}) = d_k$ cleanly. That is all it does.
+
+#### Questioning Assumption 2: Uncorrelated Terms
+
+This is the assumption worth pressing on. The standard treatment — 
+including the original attention paper — simply assumes the entries of 
+$\mathbf{q}_n$ and $\mathbf{k}_m$ are i.i.d. and moves on. No 
+justification is given. Let's be more careful.
+
+Define $Z_j = \mathcal{Q}_{nj}\mathcal{K}_{mj}$ for $j = 1, \ldots, 
+d_k$. The exact variance of the dot product is:
+
+$$\text{Var}\left(\sum_{j=1}^{d_k} Z_j\right) 
+= \sum_{j=1}^{d_k} \text{Var}(Z_j) + 2\sum_{i < j} \text{Cov}(Z_i, Z_j)$$
+
+$$= \underbrace{\text{Var}(Z_1) + \text{Var}(Z_2) + \cdots + 
+\text{Var}(Z_{d_k})}_{d_k \text{ terms, each equal to } 1} + 
+2\sum_{i < j} \text{Cov}(Z_i, Z_j)$$
+
+$$= d_k + 2\sum_{i < j} \text{Cov}(Z_i, Z_j)$$
+
+The question is: what are the covariance terms?
+
+$$\text{Cov}(Z_i, Z_j) = \mathbb{E}[Z_i Z_j] - \mathbb{E}[Z_i]
+\mathbb{E}[Z_j] = \mathbb{E}[Z_i Z_j]$$
+
+since $\mathbb{E}[Z_j] = 0$ for all $j$. Expanding:
+
+$$\text{Cov}(Z_i, Z_j) = 
+\mathbb{E}[\mathcal{Q}_{ni}\mathcal{K}_{mi}\mathcal{Q}_{nj}\mathcal{K}_{mj}]$$
+
+Now, $\mathbf{q}_n = W_Q\mathbf{x}_n$ and $\mathbf{k}_m = W_K\mathbf{x}_m$ 
+come from different weight matrices applied to different patch vectors. 
+If $n \neq m$, treating different patches as independent — they come 
+from different spatial locations — then $\mathbf{q}_n$ and $\mathbf{k}_m$ 
+are independent of each other, and the expectation factorizes:
+
+$$\text{Cov}(Z_i, Z_j) = 
+\mathbb{E}[\mathcal{Q}_{ni}\mathcal{Q}_{nj}] \cdot 
+\mathbb{E}[\mathcal{K}_{mi}\mathcal{K}_{mj}]$$
+
+Since both $\mathbf{q}_n$ and $\mathbf{k}_m$ have mean zero:
+
+$$\mathbb{E}[\mathcal{Q}_{ni}\mathcal{Q}_{nj}] = 
+\text{Cov}(\mathcal{Q}_{ni}, \mathcal{Q}_{nj}) = [\Sigma_Q]_{ij}$$
+
+$$\mathbb{E}[\mathcal{K}_{mi}\mathcal{K}_{mj}] = 
+\text{Cov}(\mathcal{K}_{mi}, \mathcal{K}_{mj}) = [\Sigma_K]_{ij}$$
+
+So:
+
+$$\text{Cov}(Z_i, Z_j) = [\Sigma_Q]_{ij} \cdot [\Sigma_K]_{ij}$$
+
+And the full variance is:
+
+$$\text{Var}(\mathcal{S}_{nm}) = d_k + 
+2\sum_{i<j}[\Sigma_Q]_{ij}[\Sigma_K]_{ij}$$
+
+The covariance terms vanish if and only if the entries of $\mathbf{q}_n$ 
+are uncorrelated with each other, or the entries of $\mathbf{k}_m$ are 
+uncorrelated with each other — i.e., $[\Sigma_Q]_{ij} = 0$ or 
+$[\Sigma_K]_{ij} = 0$ for all $i \neq j$.
+
+**How large can the covariance terms be?** By Cauchy-Schwarz — the 
+same inequality we derived in Part 1, applied to the expectation inner 
+product $\langle X, Y \rangle = \mathbb{E}[XY]$:
+
+$$|[\Sigma_Q]_{ij}|^2 \leq \text{Var}(\mathcal{Q}_{ni})
+\text{Var}(\mathcal{Q}_{nj}) = 1$$
+
+So $|[\Sigma_Q]_{ij}| \leq 1$, and similarly $|[\Sigma_K]_{ij}| \leq 1$. 
+Each off-diagonal covariance term lies in $[-1, 1]$. There are 
+$\binom{d_k}{2} = \frac{d_k(d_k-1)}{2}$ such terms — in principle, 
+the entire off-diagonal sum could dominate the $d_k$ term for large 
+$d_k$.
+
+$$\text{Var}(\mathcal{S}_{nm}) = d_k \quad \text{exactly}$$
+
++**Can we fix this?** Yes — by whitening $\mathbf{q}_n$ and 
+$\mathbf{k}_m$, exactly as we whitened the data in Part 1. If 
+$\Sigma_Q = I$, then $[\Sigma_Q]_{ij} = 0$ for all $i \neq j$, and 
+the covariance terms vanish exactly, giving 
+$\text{Var}(\mathcal{S}_{nm}) = d_k$ precisely. Whether this is done 
+in practice is a question for a later post.
+
+::: {.callout-note appearance="minimal"}
+**The honest bottom line.** The standard derivation, including the 
+original attention paper, makes the independence assumption without 
+justification and does not analyze the correlated case. The exact 
+variance is:
+
+$$\text{Var}(\mathcal{S}_{nm}) = d_k + 
+2\sum_{i<j}[\Sigma_Q]_{ij}[\Sigma_K]_{ij}$$
+
+Under the assumption that query and key dimensions are uncorrelated — 
+which holds exactly under whitening, and approximately at random 
+initialization — the second term vanishes and 
+$\text{Var}(\mathcal{S}_{nm}) = d_k$. This is the basis for the 
+$\frac{1}{\sqrt{d_k}}$ scaling. The correlated case does not have a 
+tight analysis in the standard literature — the $d_k$ scaling should 
+be understood as an approximation, not an exact result, in the general 
+case.
+:::
+
+With this caveat, let us return to the main thread. 
+
+In the clean case, the standard deviation of a score gap grows like $$ \sqrt{d_k}. $$. The important point is that as the dimension grows, the score gaps seen by softmax tend to grow as well.
+
+And softmax exponentiates those gaps. This is where soft attention can start behaving like hard attention. 
+
+### When Soft Attention Becomes Hard Attention
+
+Before going further, let us define the words.
+
+**Soft attention** assigns nonzero weight to multiple patches — the 
+weighted average is a genuine blend. **Hard attention** collapses to 
+a single patch — the weighted average becomes a lookup. For example, 
+with four patches:
+
+$$\text{soft: } \mathbf{a} = \begin{bmatrix} 0.00 & 0.12 & 0.76 & 0.12 \end{bmatrix}$$
+
+$$\text{hard: } \mathbf{a} = \begin{bmatrix} 0 & 0 & 1 & 0 \end{bmatrix}$$
+
+In the soft case, patches 2, 3, and 4 all contribute to 
+$\mathbf{y}_n$. In the hard case, $\mathbf{y}_n = \mathbf{v}_3$ — 
+the boat attends to one patch and ignores everything else. This is a problem because we built self-attention to aggregate context from many patches. The problem is not that hard attention is wrong. It isn't. Hard decisions are everywhere in machine learning and real life. A multi-class classifier may ultimately assign one class. In an image, one patch may genuinely dominate. The problem is when attention becomes hard purely because the score magnitudes have grown, not because an image patch is overly dominant. 
+
+We have seen that the typical size of a score gap also grows as $\sqrt{d_k}$. Let's see this in action
+
+Fix the relative structure of the scores 
+for the boat patch — near water is the most relevant patch, far water 
+is second. The gap between them is of order $\sqrt{d_k}$. Here is 
+what happens to the attention ratio and the weight on the top patch 
+as $d_k$ grows:
+
+| $d_k$ | $\text{std}(\mathcal{S}_{nm})$ | Typical gap $S_{n3} - S_{n4}$ | $\frac{a_{n3}}{a_{n4}} = e^{\text{gap}}$ | $a_{n3}$ (approx) |
+|---|---|---|---|---|
+| 1 | 1 | $\sim 1$ | $\sim e^1 \approx 2.7$ | $\sim 0.55$ |
+| 4 | 2 | $\sim 2$ | $\sim e^2 \approx 7.4$ | $\sim 0.74$ |
+| 16 | 4 | $\sim 4$ | $\sim e^4 \approx 55$ | $\sim 0.98$ |
+| 64 | 8 | $\sim 8$ | $\sim e^8 \approx 3000$ | $\approx 1$ |
+| 256 | 16 | $\sim 16$ | $\sim e^{16} \approx 9 \times 10^6$ | $\approx 1$ |
+
+By $d_k = 64$ — a small, standard value — the ratio of the top patch 
+to the second patch is already 3000:1. Far water has effectively stopped contributing to the weighted average. The boat is just attending to one patch and ignoring everything else. Nothing changed — not the ranking, not the image, not the relative 
+relevance of the patches. Only the scale of the scores grew with 
+$d_k$. That alone was enough to collapse soft attention into hard 
+attention.
+
+The ranking did not change. The image did not change. The relative 
+relevance of the patches did not change. Only the scale of the scores 
+changed — and that was enough.
+
+This is the problem. Not hard attention in principle. Hard attention 
+for the wrong reason.
+
+**Enter $\frac{1}{\sqrt{d_k}}$.** One number. Divide the scores by 
+it before softmax sees them. That is the entire fix.
+
+The typical gap becomes:
+
+$$\frac{S_{n3} - S_{n4}}{\sqrt{d_k}} \sim \mathcal{O}(1)$$
+
+independent of $d_k$. The attention ratio stays bounded:
+
+$$\frac{a_{n3}}{a_{n4}} = \exp\left(\frac{S_{n3} - S_{n4}}{\sqrt{d_k}}\right) 
+\sim e^1 \approx 2.7$$
+
+regardless of how large $d_k$ gets. The score gaps that were growing 
+without bound are now pinned to order 1. Soft attention is preserved. 
+The weighted average remains a genuine average — not a lookup. And 
+the number that does all of this is $\sqrt{d_k}$ — the very same 
+quantity that was causing the problem in the first place.

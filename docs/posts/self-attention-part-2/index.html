@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Madhav Prashanth Ramachandran">
+<meta name="dcterms.date" content="2026-06-24">
+
+<title>Self-Attention From First Principles — Part 2 – Transformers and Perception</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a0f9fd0d421825b736dc1bbcbcba2219.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Transformers and Perception</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts/index.qmd"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#picking-up-where-we-left-off" id="toc-picking-up-where-we-left-off" class="nav-link active" data-scroll-target="#picking-up-where-we-left-off"><span class="header-section-number">1</span> Picking Up Where We Left Off</a></li>
+  <li><a href="#from-vectors-to-matrices" id="toc-from-vectors-to-matrices" class="nav-link" data-scroll-target="#from-vectors-to-matrices"><span class="header-section-number">2</span> From Vectors to Matrices</a>
+  <ul class="collapse">
+  <li><a href="#dimensions" id="toc-dimensions" class="nav-link" data-scroll-target="#dimensions"><span class="header-section-number">2.1</span> Dimensions</a></li>
+  <li><a href="#building-the-query-and-key-matrices" id="toc-building-the-query-and-key-matrices" class="nav-link" data-scroll-target="#building-the-query-and-key-matrices"><span class="header-section-number">2.2</span> Building the Query and Key Matrices</a></li>
+  <li><a href="#the-score-matrix" id="toc-the-score-matrix" class="nav-link" data-scroll-target="#the-score-matrix"><span class="header-section-number">2.3</span> The Score Matrix</a></li>
+  <li><a href="#analogy-with-the-mahalanobis-distance" id="toc-analogy-with-the-mahalanobis-distance" class="nav-link" data-scroll-target="#analogy-with-the-mahalanobis-distance"><span class="header-section-number">2.4</span> Analogy with the Mahalanobis Distance</a></li>
+  </ul></li>
+  <li><a href="#scaled-dot-product-attention" id="toc-scaled-dot-product-attention" class="nav-link" data-scroll-target="#scaled-dot-product-attention"><span class="header-section-number">3</span> Scaled Dot-Product Attention</a>
+  <ul class="collapse">
+  <li><a href="#from-scores-to-attention-weights" id="toc-from-scores-to-attention-weights" class="nav-link" data-scroll-target="#from-scores-to-attention-weights"><span class="header-section-number">3.1</span> From Scores to Attention Weights</a></li>
+  <li><a href="#softmax-has-a-scale-problem" id="toc-softmax-has-a-scale-problem" class="nav-link" data-scroll-target="#softmax-has-a-scale-problem"><span class="header-section-number">3.2</span> Softmax Has a Scale Problem</a></li>
+  <li><a href="#how-large-are-the-score-gaps" id="toc-how-large-are-the-score-gaps" class="nav-link" data-scroll-target="#how-large-are-the-score-gaps"><span class="header-section-number">3.3</span> How Large Are the Score Gaps?</a></li>
+  <li><a href="#when-soft-attention-becomes-hard-attention" id="toc-when-soft-attention-becomes-hard-attention" class="nav-link" data-scroll-target="#when-soft-attention-becomes-hard-attention"><span class="header-section-number">3.4</span> When Soft Attention Becomes Hard Attention</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Self-Attention From First Principles — Part 2</h1>
+<p class="subtitle lead">Scaled dot-product attention, multi-head attention, and the code</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">transformers</div>
+    <div class="quarto-category">vision</div>
+    <div class="quarto-category">attention</div>
+    <div class="quarto-category">linear-algebra</div>
+    <div class="quarto-category">numpy</div>
+    <div class="quarto-category">pytorch</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Madhav Prashanth Ramachandran </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 24, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="picking-up-where-we-left-off" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="picking-up-where-we-left-off"><span class="header-section-number">1</span> Picking Up Where We Left Off</h2>
+<p><a href="https://madhavpr191221.github.io/transformers_for_perception/posts/self-attention-from-first-principles/index.html">Part 1</a> ended with self-attention almost fully derived — queries, keys, a similarity score, and a weighted average. Almost, because we left two things unfinished.</p>
+<p><strong>First, the softmax itself. </strong></p>
+<p>Machine learning practioners recognize softmax immediately. But, it turns out that the raw form of softmax needs a simple but non-trivial modification to make the computation numerically and statistically well-behaved. Rather than simply stating it as a fact, we will derive it from first principles with a simple numerical example to support the theory.</p>
+<p><strong>Second, the value vector.</strong></p>
+<p>We averaged raw patch vectors <span class="math inline">\(\mathbf{x}_m\)</span> throughout Part 1, and flagged at the end that real self-attention averages a separately learned projection instead. We deferred the construction intetionally. This post builds it.</p>
+<p>Spoiler Alert: The value vector isn’t magical. It is just matrix-vector multiplication</p>
+<p><strong>Third, multi-head attention.</strong></p>
+<p>Third, we worked with one query and one key projection throughout. In practice, self-attention runs several different key and query projections in parallel. You can think about attaching different “importance scores” to each patch in different ways. This is called Multi-Head Attention and it is the last piece of the self-attention story.</p>
+<p>If you haven’t read Part 1, start there. It explains the idea of self-attention from first principles, using a satellite image as a running example instead of beginning with natural language tokens. The mathematics is not there for decoration. It is the medium through which the story comes alive.</p>
+</section>
+<section id="from-vectors-to-matrices" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="from-vectors-to-matrices"><span class="header-section-number">2</span> From Vectors to Matrices</h2>
+<p>In Part 1, we derived a similarity score between two patches <span class="math inline">\(\mathbf{x}_n\)</span> and <span class="math inline">\(\mathbf{x}_m\)</span>:</p>
+<p><span class="math display">\[
+\text{score}(n,m) = \mathbf{q}_n^\top \mathbf{k}_m,
+\qquad
+\mathbf{q}_n = W_Q \mathbf{x}_n,
+\qquad
+\mathbf{k}_m = W_K \mathbf{x}_m.
+\]</span></p>
+<p>Roughly speaking, <span class="math inline">\(\text{score}(n,m)\)</span> measures how well what patch <span class="math inline">\(n\)</span> is asking for matches what patch <span class="math inline">\(m\)</span> has to offer.</p>
+<p>We worked with individual patch vectors throughout Part 1. Now we need to scale this up: not one query and one key, but <span class="math inline">\(N\)</span> queries and <span class="math inline">\(N\)</span> keys — one for every patch in the image. And we want to compute all <span class="math inline">\(N^2\)</span> similarity scores at once, not one at a time.</p>
+<p>To do that cleanly, we first need to be precise about dimensions.</p>
+<section id="dimensions" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="dimensions"><span class="header-section-number">2.1</span> Dimensions</h3>
+<p>Each patch vector is a column vector:</p>
+<p><span class="math display">\[
+\mathbf{x}_n \in \mathbb{R}^{D}.
+\]</span></p>
+<p>The matrix <span class="math inline">\(W_Q\)</span> acts on vectors in <span class="math inline">\(\mathbb{R}^{D}\)</span>, so it must have <span class="math inline">\(D\)</span> columns. Similarly, <span class="math inline">\(W_K\)</span> also acts on vectors in <span class="math inline">\(\mathbb{R}^{D}\)</span>, so it too must have <span class="math inline">\(D\)</span> columns.</p>
+<p>Suppose</p>
+<p><span class="math display">\[
+W_Q \in \mathbb{R}^{d_q \times D},
+\qquad
+W_K \in \mathbb{R}^{d_k \times D}.
+\]</span></p>
+<p>Then matrix-vector multiplication gives</p>
+<p><span class="math display">\[
+\mathbf{q}_n = W_Q \mathbf{x}_n \in \mathbb{R}^{d_q},
+\qquad
+\mathbf{k}_m = W_K \mathbf{x}_m \in \mathbb{R}^{d_k}.
+\]</span></p>
+<p>But the attention score is defined as a dot product:</p>
+<p><span class="math display">\[
+\text{score}(n,m)
+=
+\mathbf{q}_n^\top \mathbf{k}_m.
+\]</span></p>
+<p>For this dot product to make sense, <span class="math inline">\(\mathbf{q}_n\)</span> and <span class="math inline">\(\mathbf{k}_m\)</span> must live in the same space. Therefore,</p>
+<p><span class="math display">\[
+d_q = d_k.
+\]</span></p>
+<p>We call this common dimension <span class="math inline">\(d_k\)</span>. So from here on,</p>
+<p><span class="math display">\[
+W_Q \in \mathbb{R}^{d_k \times D},
+\qquad
+W_K \in \mathbb{R}^{d_k \times D},
+\]</span></p>
+<p>and</p>
+<p><span class="math display">\[
+\mathbf{q}_n, \mathbf{k}_m \in \mathbb{R}^{d_k}.
+\]</span></p>
+</section>
+<section id="building-the-query-and-key-matrices" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="building-the-query-and-key-matrices"><span class="header-section-number">2.2</span> Building the Query and Key Matrices</h3>
+<p>The data matrix <span class="math inline">\(X \in \mathbb{R}^{N \times D}\)</span> stores patch vectors as rows:</p>
+<p><span class="math display">\[
+\operatorname{row}_n(X) = \mathbf{x}_n^\top.
+\]</span></p>
+<p>We build <span class="math inline">\(Q\)</span> the same way, by storing query vectors as rows:</p>
+<p><span class="math display">\[
+Q \in \mathbb{R}^{N \times d_k},
+\qquad
+\operatorname{row}_n(Q) = \mathbf{q}_n^\top.
+\]</span></p>
+<p>Now use the individual-vector definition:</p>
+<p><span class="math display">\[
+\mathbf{q}_n = W_Q \mathbf{x}_n.
+\]</span></p>
+<p>Taking transpose,</p>
+<p><span class="math display">\[
+\mathbf{q}_n^\top
+=
+(W_Q \mathbf{x}_n)^\top
+=
+\mathbf{x}_n^\top W_Q^\top.
+\]</span></p>
+<p>Therefore,</p>
+<p><span class="math display">\[
+\operatorname{row}_n(Q)
+=
+\operatorname{row}_n(X) W_Q^\top.
+\]</span></p>
+<p>Since this holds for every row,</p>
+<p><span class="math display">\[
+Q = XW_Q^\top.
+\]</span></p>
+<p>The dimensions are:</p>
+<p><span class="math display">\[
+X \in \mathbb{R}^{N \times D},
+\qquad
+W_Q^\top \in \mathbb{R}^{D \times d_k},
+\qquad
+Q \in \mathbb{R}^{N \times d_k}.
+\]</span></p>
+<p>So,</p>
+<p><span class="math display">\[
+Q = XW_Q^\top \in \mathbb{R}^{N \times d_k}.
+\]</span></p>
+<p>By the same argument,</p>
+<p><span class="math display">\[
+K = XW_K^\top \in \mathbb{R}^{N \times d_k}.
+\]</span></p>
+<p>The transpose appears only because individual patch vectors are column vectors, while the data matrix stores patches as rows.</p>
+<p>Explicitly, the query matrix is obtained by stacking the query vectors row by row:</p>
+<p><span class="math display">\[
+Q
+=
+\begin{bmatrix}
+\mathbf{q}_1^\top \\
+\mathbf{q}_2^\top \\
+\vdots \\
+\mathbf{q}_N^\top
+\end{bmatrix}.
+\]</span></p>
+<p>Since <span class="math inline">\(\mathbf{q}_i = W_Q \mathbf{x}_i\)</span>, each row becomes</p>
+<p><span class="math display">\[
+\mathbf{q}_i^\top
+=
+(W_Q \mathbf{x}_i)^\top
+=
+\mathbf{x}_i^\top W_Q^\top.
+\]</span></p>
+<p>So,</p>
+<p><span class="math display">\[
+Q
+=
+\begin{bmatrix}
+\mathbf{x}_1^\top W_Q^\top \\
+\mathbf{x}_2^\top W_Q^\top \\
+\vdots \\
+\mathbf{x}_N^\top W_Q^\top
+\end{bmatrix}
+=
+\begin{bmatrix}
+\mathbf{x}_1^\top \\
+\mathbf{x}_2^\top \\
+\vdots \\
+\mathbf{x}_N^\top
+\end{bmatrix}
+W_Q^\top
+=
+XW_Q^\top.
+\]</span></p>
+<p>Therefore,</p>
+<p><span class="math display">\[
+Q = XW_Q^\top \in \mathbb{R}^{N \times d_k}.
+\]</span></p>
+<p>By the same reasoning,</p>
+<p><span class="math display">\[
+K = XW_K^\top \in \mathbb{R}^{N \times d_k}.
+\]</span></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/query_and_key_matrices.png" class="img-fluid figure-img"></p>
+<figcaption>Projection of image patches into query and key spaces.</figcaption>
+</figure>
+</div>
+</section>
+<section id="the-score-matrix" class="level3" data-number="2.3">
+<h3 data-number="2.3" class="anchored" data-anchor-id="the-score-matrix"><span class="header-section-number">2.3</span> The Score Matrix</h3>
+<p>We want a score matrix <span class="math inline">\(S \in \mathbb{R}^{N \times N}\)</span> whose <span class="math inline">\((n,m)\)</span>-th entry is</p>
+<p><span class="math display">\[
+S_{nm}
+=
+\text{score}(n,m)
+=
+\mathbf{q}_n^\top \mathbf{k}_m.
+\]</span></p>
+<p>Fix row <span class="math inline">\(n\)</span> of <span class="math inline">\(S\)</span>. Its entries are</p>
+<p><span class="math display">\[
+S_{n1}, S_{n2}, \ldots, S_{nN}.
+\]</span></p>
+<p>Written as a row vector,</p>
+<p><span class="math display">\[
+\operatorname{row}_n(S)
+=
+\begin{bmatrix}
+\mathbf{q}_n^\top \mathbf{k}_1
+&amp;
+\mathbf{q}_n^\top \mathbf{k}_2
+&amp;
+\cdots
+&amp;
+\mathbf{q}_n^\top \mathbf{k}_N
+\end{bmatrix}.
+\]</span></p>
+<p>Factor out <span class="math inline">\(\mathbf{q}_n^\top\)</span>:</p>
+<p><span class="math display">\[
+\operatorname{row}_n(S)
+=
+\mathbf{q}_n^\top
+\begin{bmatrix}
+\mathbf{k}_1
+&amp;
+\mathbf{k}_2
+&amp;
+\cdots
+&amp;
+\mathbf{k}_N
+\end{bmatrix}.
+\]</span></p>
+<p>But</p>
+<p><span class="math display">\[
+\begin{bmatrix}
+\mathbf{k}_1
+&amp;
+\mathbf{k}_2
+&amp;
+\cdots
+&amp;
+\mathbf{k}_N
+\end{bmatrix}
+=
+K^\top.
+\]</span></p>
+<p>Therefore,</p>
+<p><span class="math display">\[
+\operatorname{row}_n(S)
+=
+\mathbf{q}_n^\top K^\top.
+\]</span></p>
+<p>Since the <span class="math inline">\(n\)</span>-th row of <span class="math inline">\(Q\)</span> is <span class="math inline">\(\mathbf{q}_n^\top\)</span>,</p>
+<p><span class="math display">\[
+\operatorname{row}_n(S)
+=
+\operatorname{row}_n(Q)K^\top.
+\]</span></p>
+<p>Stacking this for all <span class="math inline">\(n = 1,\ldots,N\)</span>, we get</p>
+<p><span class="math display">\[
+S = QK^\top.
+\]</span></p>
+<p>The dimensions are:</p>
+<p><span class="math display">\[
+Q \in \mathbb{R}^{N \times d_k},
+\qquad
+K^\top \in \mathbb{R}^{d_k \times N},
+\qquad
+S \in \mathbb{R}^{N \times N}.
+\]</span></p>
+<p>So the full score matrix is</p>
+<p><span class="math display">\[
+S = QK^\top \in \mathbb{R}^{N \times N}.
+\]</span></p>
+<p>Now expand this in terms of <span class="math inline">\(X\)</span>, <span class="math inline">\(W_Q\)</span>, and <span class="math inline">\(W_K\)</span>:</p>
+<p><span class="math display">\[
+S
+=
+QK^\top.
+\]</span></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/q_k_transpose.png" class="img-fluid figure-img"></p>
+<figcaption>Constructing the attention score matrix as <span class="math inline">\(S = QK^\top\)</span>.</figcaption>
+</figure>
+</div>
+</section>
+<section id="analogy-with-the-mahalanobis-distance" class="level3" data-number="2.4">
+<h3 data-number="2.4" class="anchored" data-anchor-id="analogy-with-the-mahalanobis-distance"><span class="header-section-number">2.4</span> Analogy with the Mahalanobis Distance</h3>
+<p>Using</p>
+<p><span class="math display">\[
+Q = XW_Q^\top,
+\qquad
+K = XW_K^\top,
+\]</span></p>
+<p>the score matrix can be rewritten as</p>
+<p><span class="math display">\[
+S
+=
+QK^\top
+=
+(XW_Q^\top)(XW_K^\top)^\top
+=
+XW_Q^\top W_KX^\top.
+\]</span></p>
+<p>Define</p>
+<p><span class="math display">\[
+M := W_Q^\top W_K.
+\]</span></p>
+<p>Then</p>
+<p><span class="math display">\[
+S = XMX^\top,
+\qquad
+S_{nm} = \mathbf{x}_n^\top M \mathbf{x}_m.
+\]</span></p>
+<p>So the attention score is a learned bilinear similarity between two patch vectors.</p>
+<p>This is the connection to Part 1: in the Mahalanobis form, the middle matrix is <span class="math inline">\(\Sigma^{-1}\)</span>. In self-attention, the middle matrix is learned:</p>
+<p><span class="math display">\[
+M = W_Q^\top W_K.
+\]</span></p>
+<p>Unlike <span class="math inline">\(\Sigma^{-1}\)</span>, this matrix need not be symmetric. That is important because attention itself need not be symmetric: patch <span class="math inline">\(n\)</span> attending to patch <span class="math inline">\(m\)</span> does not imply that patch <span class="math inline">\(m\)</span> attends equally strongly back to patch <span class="math inline">\(n\)</span>.</p>
+</section>
+</section>
+<section id="scaled-dot-product-attention" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="scaled-dot-product-attention"><span class="header-section-number">3</span> Scaled Dot-Product Attention</h2>
+<section id="from-scores-to-attention-weights" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="from-scores-to-attention-weights"><span class="header-section-number">3.1</span> From Scores to Attention Weights</h3>
+<p>We now have a score matrix <span class="math display">\[ S = QK^\top \in \mathbb{R}^{N \times N}. \]</span> The entry <span class="math inline">\(S_{nm}\)</span> measures how strongly patch <span class="math inline">\(n\)</span> matches patch <span class="math inline">\(m\)</span>. But these raw scores are (arbitrary) real numbers. To turn them into attention weights, we apply the softmax operation row by row.</p>
+<p>Why row by row? Because each row corresponds to one patch asking its own question. Suppose patch <span class="math inline">\(n\)</span> contains a boat. The raw score answers the question: for this boat patch, how relevant is every other patch? Softmax just normalizes across this row and turns them into probabilities.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/row_wise_softmax.png" class="img-fluid figure-img"></p>
+<figcaption>Row-wise softmax in self-attention</figcaption>
+</figure>
+</div>
+</section>
+<section id="softmax-has-a-scale-problem" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="softmax-has-a-scale-problem"><span class="header-section-number">3.2</span> Softmax Has a Scale Problem</h3>
+<p>There is one thing we have quietly ignored.</p>
+<p>Softmax is not just a ranking function.</p>
+<p>Take one row of scores. Suppose the boat patch gives the following scores to three surrounding patches:</p>
+<p><span class="math display">\[
+\begin{bmatrix}
+1 &amp; 2 &amp; 3
+\end{bmatrix},
+\]</span></p>
+<p>Softmax applied above gives approximately</p>
+<p><span class="math display">\[
+\operatorname{softmax}
+\left(
+\begin{bmatrix}
+1 &amp; 2 &amp; 3
+\end{bmatrix}
+\right)
+\approx
+\begin{bmatrix}
+0.09 &amp; 0.24 &amp; 0.67
+\end{bmatrix}.
+\]</span></p>
+<p>The third patch matters the most, but the other two patches still have finite contribution.</p>
+<p>If the same patch produces a score,</p>
+<p><span class="math display">\[
+\begin{bmatrix}
+10 &amp; 20 &amp; 30
+\end{bmatrix},
+\]</span></p>
+<p>softmax is essentially</p>
+<p><span class="math display">\[
+\operatorname{softmax}
+\left(
+\begin{bmatrix}
+10 &amp; 20 &amp; 30
+\end{bmatrix}
+\right)
+\approx
+\begin{bmatrix}
+0 &amp; 0 &amp; 1
+\end{bmatrix}.
+\]</span></p>
+<p>The ordering of the scores has not changed but the third patch has completely swallowed the other two.</p>
+<p>The question is not only: Which patch has the highest score but also how large are the gaps between scores?</p>
+<p>Take one query patch <span class="math inline">\(n\)</span>. Suppose we compare how much attention patch <span class="math inline">\(n\)</span> gives to two patches: patch <span class="math inline">\(m\)</span> and patch <span class="math inline">\(m'\)</span>.</p>
+<p>The corresponding attention weights are <span class="math display">\[ a_{nm} = \frac{\exp(S_{nm})} {\sum_{j=1}^{N}\exp(S_{nj})}, \qquad a_{nm'} = \frac{\exp(S_{nm'})} {\sum_{j=1}^{N}\exp(S_{nj})}. \]</span></p>
+<p><span class="math display">\[ \frac{a_{nm}}{a_{nm'}} = \frac{\exp(S_{nm})}{\exp(S_{nm'})}. \]</span></p>
+<p>Therefore, <span class="math display">\[ \frac{a_{nm}}{a_{nm'}} = \exp(S_{nm} - S_{nm'}). \]</span></p>
+<p>This is the important point. Softmax does not compare <span class="math inline">\(S_{nm}\)</span> and <span class="math inline">\(S_{nm'}\)</span> in isolation. It compares them through the difference <span class="math display">\[ S_{nm} - S_{nm'}. \]</span> So the gap between the two scores controls how much more attention patch <span class="math inline">\(m\)</span> receives compared to patch <span class="math inline">\(m'\)</span>.</p>
+</section>
+<section id="how-large-are-the-score-gaps" class="level3" data-number="3.3">
+<h3 data-number="3.3" class="anchored" data-anchor-id="how-large-are-the-score-gaps"><span class="header-section-number">3.3</span> How Large Are the Score Gaps?</h3>
+<p>This is now the real question.</p>
+<p>For any (satellite) image, <span class="math inline">\(S_{nm}\)</span> is just a number. So is <span class="math inline">\(S_{nm'}\)</span>. Their difference is also just a number.</p>
+<p>But to understand the gaps better, let’s change our point-of-view and think of these scores as realizations of random variables.</p>
+<p>Let</p>
+<p><span class="math display">\[
+\mathcal{S}_{nm}
+\]</span></p>
+<p>denote the random score between query patch <span class="math inline">\(n\)</span> and key patch <span class="math inline">\(m\)</span>.</p>
+<p>The realized value inside the score matrix is</p>
+<p><span class="math display">\[
+S_{nm}.
+\]</span></p>
+<p>Similarly, the score gap</p>
+<p><span class="math display">\[
+S_{nm} - S_{nm'}
+\]</span></p>
+<p>is a realization of the random variable</p>
+<p><span class="math display">\[
+\mathcal{S}_{nm} - \mathcal{S}_{nm'}.
+\]</span></p>
+<p>So when we ask how large the score gap is, we are really asking:</p>
+<blockquote class="blockquote">
+<p>What is the typical scale of the random variable <span class="math inline">\(\mathcal{S}_{nm} - \mathcal{S}_{nm'}\)</span>?</p>
+</blockquote>
+<p>A natural way to measure this typical scale is its standard deviation.</p>
+<p>The standard deviation does not tell us the exact gap for a particular image. It gives us a rough sense of how large such gaps usually are.</p>
+<p>And that is exactly what softmax cares about, because the ratio of two attention weights is</p>
+<p><span class="math display">\[
+\frac{a_{nm}}{a_{nm'}}
+=
+\exp(S_{nm} - S_{nm'}).
+\]</span></p>
+<p>So if the typical size of</p>
+<p><span class="math display">\[
+S_{nm} - S_{nm'}
+\]</span></p>
+<p>grows, then the exponentials inside softmax become more extreme.</p>
+<p>So let us estimate the standard deviation of the random gap</p>
+<p><span class="math display">\[
+\mathcal{S}_{nm} - \mathcal{S}_{nm'}.
+\]</span></p>
+<p>Assume that the entries of the random query vector and random key vector have mean zero and variance one:</p>
+<p><span class="math display">\[
+\mathbb{E}[\mathcal{Q}_{nj}] = 0,
+\qquad
+\mathbb{E}[\mathcal{K}_{mj}] = 0,
+\]</span></p>
+<p>and</p>
+<p><span class="math display">\[
+\operatorname{Var}(\mathcal{Q}_{nj}) = 1,
+\qquad
+\operatorname{Var}(\mathcal{K}_{mj}) = 1.
+\]</span></p>
+<p>Also assume that the terms in the dot product are independent.</p>
+<p>The random score between patch <span class="math inline">\(n\)</span> and patch <span class="math inline">\(m\)</span> is</p>
+<p><span class="math display">\[
+\mathcal{S}_{nm}
+=
+\mathcal{Q}_n^\top \mathcal{K}_m
+=
+\sum_{j=1}^{d_k} \mathcal{Q}_{nj}\mathcal{K}_{mj}.
+\]</span></p>
+<p>Now consider one term in this sum:</p>
+<p><span class="math display">\[
+\mathcal{Q}_{nj}\mathcal{K}_{mj}.
+\]</span></p>
+<p>Since <span class="math inline">\(\mathcal{Q}_{nj}\)</span> and <span class="math inline">\(\mathcal{K}_{mj}\)</span> are independent,</p>
+<p><span class="math display">\[
+\mathbb{E}[\mathcal{Q}_{nj}\mathcal{K}_{mj}]
+=
+\mathbb{E}[\mathcal{Q}_{nj}]
+\mathbb{E}[\mathcal{K}_{mj}]
+=
+0.
+\]</span></p>
+<p>Also,</p>
+<p><span class="math display">\[
+\mathbb{E}[\mathcal{Q}_{nj}^2\mathcal{K}_{mj}^2]
+=
+\mathbb{E}[\mathcal{Q}_{nj}^2]
+\mathbb{E}[\mathcal{K}_{mj}^2].
+\]</span></p>
+<p>Since both random variables have mean zero and variance one,</p>
+<p><span class="math display">\[
+\mathbb{E}[\mathcal{Q}_{nj}^2] = 1,
+\qquad
+\mathbb{E}[\mathcal{K}_{mj}^2] = 1.
+\]</span></p>
+<p>Therefore,</p>
+<p><span class="math display">\[
+\mathbb{E}[\mathcal{Q}_{nj}^2\mathcal{K}_{mj}^2]
+=
+1.
+\]</span></p>
+<p>So,</p>
+<p><span class="math display">\[
+\operatorname{Var}(\mathcal{Q}_{nj}\mathcal{K}_{mj})
+=
+\mathbb{E}[\mathcal{Q}_{nj}^2\mathcal{K}_{mj}^2]
+-
+\left(
+\mathbb{E}[\mathcal{Q}_{nj}\mathcal{K}_{mj}]
+\right)^2
+=
+1 - 0
+=
+1.
+\]</span></p>
+<p>Each coordinate contributes variance one.</p>
+<p>Therefore,</p>
+<p><span class="math display">\[
+\operatorname{Var}(\mathcal{S}_{nm})
+=
+\operatorname{Var}
+\left(
+\sum_{j=1}^{d_k} \mathcal{Q}_{nj}\mathcal{K}_{mj}
+\right).
+\]</span></p>
+<p>By independence of the terms,</p>
+<p><span class="math display">\[
+\operatorname{Var}(\mathcal{S}_{nm})
+=
+\sum_{j=1}^{d_k}
+\operatorname{Var}(\mathcal{Q}_{nj}\mathcal{K}_{mj}).
+\]</span></p>
+<p>Hence,</p>
+<p><span class="math display">\[
+\operatorname{Var}(\mathcal{S}_{nm})
+=
+\underbrace{1 + 1 + \cdots + 1}_{d_k \text{ times}}
+=
+d_k.
+\]</span></p>
+<p>So,</p>
+<p><span class="math display">\[
+\operatorname{std}(\mathcal{S}_{nm})
+=
+\sqrt{d_k}.
+\]</span></p>
+<p>Now consider two scores in the same row:</p>
+<p><span class="math display">\[
+\mathcal{S}_{nm}
+\qquad
+\text{and}
+\qquad
+\mathcal{S}_{nm'}.
+\]</span></p>
+<p>The gap is</p>
+<p><span class="math display">\[
+\mathcal{S}_{nm} - \mathcal{S}_{nm'}.
+\]</span></p>
+<p>Assuming these two random scores are independent,</p>
+<p><span class="math display">\[
+\operatorname{Var}(\mathcal{S}_{nm} - \mathcal{S}_{nm'})
+=
+\operatorname{Var}(\mathcal{S}_{nm})
++
+\operatorname{Var}(\mathcal{S}_{nm'}).
+\]</span></p>
+<p>Since both scores have variance <span class="math inline">\(d_k\)</span>,</p>
+<p><span class="math display">\[
+\operatorname{Var}(\mathcal{S}_{nm} - \mathcal{S}_{nm'})
+=
+d_k + d_k
+=
+2d_k.
+\]</span></p>
+<p>Therefore,</p>
+<p><span class="math display">\[
+\operatorname{std}(\mathcal{S}_{nm} - \mathcal{S}_{nm'})
+=
+\sqrt{2d_k}.
+\]</span></p>
+<p>So the usual size of the score gap grows like</p>
+<p><span class="math display">\[
+O(\sqrt{d_k}).
+\]</span></p>
+<p>This is the scaling problem. As <span class="math inline">\(d_k\)</span> grows, the gaps between scores also grow. But softmax depends exponentially on these gaps.</p>
+<section id="questioning-assumption-1-mean-zero-unit-variance" class="level4" data-number="3.3.1">
+<h4 data-number="3.3.1" class="anchored" data-anchor-id="questioning-assumption-1-mean-zero-unit-variance"><span class="header-section-number">3.3.1</span> Questioning Assumption 1: Mean Zero, Unit Variance</h4>
+<p>Fair question. If the entries don’t have mean zero, center them. If they don’t have unit variance, standardize them. Neither operation changes the qualitative conclusion — the variance of <span class="math inline">\(\mathcal{S}_{nm}\)</span> is still linear in <span class="math inline">\(d_k\)</span>, just with a different constant of proportionality. The assumption pins down the constant to 1, giving <span class="math inline">\(\text{Var}(\mathcal{S}_{nm}) = d_k\)</span> cleanly. That is all it does.</p>
+</section>
+<section id="questioning-assumption-2-uncorrelated-terms" class="level4" data-number="3.3.2">
+<h4 data-number="3.3.2" class="anchored" data-anchor-id="questioning-assumption-2-uncorrelated-terms"><span class="header-section-number">3.3.2</span> Questioning Assumption 2: Uncorrelated Terms</h4>
+<p>This is the assumption worth pressing on. The standard treatment — including the original attention paper — simply assumes the entries of <span class="math inline">\(\mathbf{q}_n\)</span> and <span class="math inline">\(\mathbf{k}_m\)</span> are i.i.d. and moves on. No justification is given. Let’s be more careful.</p>
+<p>Define <span class="math inline">\(Z_j = \mathcal{Q}_{nj}\mathcal{K}_{mj}\)</span> for <span class="math inline">\(j = 1, \ldots,
+d_k\)</span>. The exact variance of the dot product is:</p>
+<p><span class="math display">\[\text{Var}\left(\sum_{j=1}^{d_k} Z_j\right)
+= \sum_{j=1}^{d_k} \text{Var}(Z_j) + 2\sum_{i &lt; j} \text{Cov}(Z_i, Z_j)\]</span></p>
+<p><span class="math display">\[= \underbrace{\text{Var}(Z_1) + \text{Var}(Z_2) + \cdots +
+\text{Var}(Z_{d_k})}_{d_k \text{ terms, each equal to } 1} +
+2\sum_{i &lt; j} \text{Cov}(Z_i, Z_j)\]</span></p>
+<p><span class="math display">\[= d_k + 2\sum_{i &lt; j} \text{Cov}(Z_i, Z_j)\]</span></p>
+<p>The question is: what are the covariance terms?</p>
+<p><span class="math display">\[\text{Cov}(Z_i, Z_j) = \mathbb{E}[Z_i Z_j] - \mathbb{E}[Z_i]
+\mathbb{E}[Z_j] = \mathbb{E}[Z_i Z_j]\]</span></p>
+<p>since <span class="math inline">\(\mathbb{E}[Z_j] = 0\)</span> for all <span class="math inline">\(j\)</span>. Expanding:</p>
+<p><span class="math display">\[\text{Cov}(Z_i, Z_j) =
+\mathbb{E}[\mathcal{Q}_{ni}\mathcal{K}_{mi}\mathcal{Q}_{nj}\mathcal{K}_{mj}]\]</span></p>
+<p>Now, <span class="math inline">\(\mathbf{q}_n = W_Q\mathbf{x}_n\)</span> and <span class="math inline">\(\mathbf{k}_m = W_K\mathbf{x}_m\)</span> come from different weight matrices applied to different patch vectors. If <span class="math inline">\(n \neq m\)</span>, treating different patches as independent — they come from different spatial locations — then <span class="math inline">\(\mathbf{q}_n\)</span> and <span class="math inline">\(\mathbf{k}_m\)</span> are independent of each other, and the expectation factorizes:</p>
+<p><span class="math display">\[\text{Cov}(Z_i, Z_j) =
+\mathbb{E}[\mathcal{Q}_{ni}\mathcal{Q}_{nj}] \cdot
+\mathbb{E}[\mathcal{K}_{mi}\mathcal{K}_{mj}]\]</span></p>
+<p>Since both <span class="math inline">\(\mathbf{q}_n\)</span> and <span class="math inline">\(\mathbf{k}_m\)</span> have mean zero:</p>
+<p><span class="math display">\[\mathbb{E}[\mathcal{Q}_{ni}\mathcal{Q}_{nj}] =
+\text{Cov}(\mathcal{Q}_{ni}, \mathcal{Q}_{nj}) = [\Sigma_Q]_{ij}\]</span></p>
+<p><span class="math display">\[\mathbb{E}[\mathcal{K}_{mi}\mathcal{K}_{mj}] =
+\text{Cov}(\mathcal{K}_{mi}, \mathcal{K}_{mj}) = [\Sigma_K]_{ij}\]</span></p>
+<p>So:</p>
+<p><span class="math display">\[\text{Cov}(Z_i, Z_j) = [\Sigma_Q]_{ij} \cdot [\Sigma_K]_{ij}\]</span></p>
+<p>And the full variance is:</p>
+<p><span class="math display">\[\text{Var}(\mathcal{S}_{nm}) = d_k +
+2\sum_{i&lt;j}[\Sigma_Q]_{ij}[\Sigma_K]_{ij}\]</span></p>
+<p>The covariance terms vanish if and only if the entries of <span class="math inline">\(\mathbf{q}_n\)</span> are uncorrelated with each other, or the entries of <span class="math inline">\(\mathbf{k}_m\)</span> are uncorrelated with each other — i.e., <span class="math inline">\([\Sigma_Q]_{ij} = 0\)</span> or <span class="math inline">\([\Sigma_K]_{ij} = 0\)</span> for all <span class="math inline">\(i \neq j\)</span>.</p>
+<p><strong>How large can the covariance terms be?</strong> By Cauchy-Schwarz — the same inequality we derived in Part 1, applied to the expectation inner product <span class="math inline">\(\langle X, Y \rangle = \mathbb{E}[XY]\)</span>:</p>
+<p><span class="math display">\[|[\Sigma_Q]_{ij}|^2 \leq \text{Var}(\mathcal{Q}_{ni})
+\text{Var}(\mathcal{Q}_{nj}) = 1\]</span></p>
+<p>So <span class="math inline">\(|[\Sigma_Q]_{ij}| \leq 1\)</span>, and similarly <span class="math inline">\(|[\Sigma_K]_{ij}| \leq 1\)</span>. Each off-diagonal covariance term lies in <span class="math inline">\([-1, 1]\)</span>. There are <span class="math inline">\(\binom{d_k}{2} = \frac{d_k(d_k-1)}{2}\)</span> such terms — in principle, the entire off-diagonal sum could dominate the <span class="math inline">\(d_k\)</span> term for large <span class="math inline">\(d_k\)</span>.</p>
+<p><span class="math display">\[\text{Var}(\mathcal{S}_{nm}) = d_k \quad \text{exactly}\]</span></p>
+<p>+<strong>Can we fix this?</strong> Yes — by whitening <span class="math inline">\(\mathbf{q}_n\)</span> and <span class="math inline">\(\mathbf{k}_m\)</span>, exactly as we whitened the data in Part 1. If <span class="math inline">\(\Sigma_Q = I\)</span>, then <span class="math inline">\([\Sigma_Q]_{ij} = 0\)</span> for all <span class="math inline">\(i \neq j\)</span>, and the covariance terms vanish exactly, giving <span class="math inline">\(\text{Var}(\mathcal{S}_{nm}) = d_k\)</span> precisely. Whether this is done in practice is a question for a later post.</p>
+<div class="callout callout-style-simple callout-note no-icon">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>The honest bottom line.</strong> The standard derivation, including the original attention paper, makes the independence assumption without justification and does not analyze the correlated case. The exact variance is:</p>
+<p><span class="math display">\[\text{Var}(\mathcal{S}_{nm}) = d_k +
+2\sum_{i&lt;j}[\Sigma_Q]_{ij}[\Sigma_K]_{ij}\]</span></p>
+<p>Under the assumption that query and key dimensions are uncorrelated — which holds exactly under whitening, and approximately at random initialization — the second term vanishes and <span class="math inline">\(\text{Var}(\mathcal{S}_{nm}) = d_k\)</span>. This is the basis for the <span class="math inline">\(\frac{1}{\sqrt{d_k}}\)</span> scaling. The correlated case does not have a tight analysis in the standard literature — the <span class="math inline">\(d_k\)</span> scaling should be understood as an approximation, not an exact result, in the general case.</p>
+</div>
+</div>
+</div>
+<p>With this caveat, let us return to the main thread.</p>
+<p>In the clean case, the standard deviation of a score gap grows like <span class="math display">\[ \sqrt{d_k}. \]</span>. The important point is that as the dimension grows, the score gaps seen by softmax tend to grow as well.</p>
+<p>And softmax exponentiates those gaps. This is where soft attention can start behaving like hard attention.</p>
+</section>
+</section>
+<section id="when-soft-attention-becomes-hard-attention" class="level3" data-number="3.4">
+<h3 data-number="3.4" class="anchored" data-anchor-id="when-soft-attention-becomes-hard-attention"><span class="header-section-number">3.4</span> When Soft Attention Becomes Hard Attention</h3>
+<p>Before going further, let us define the words.</p>
+<p><strong>Soft attention</strong> assigns nonzero weight to multiple patches — the weighted average is a genuine blend. <strong>Hard attention</strong> collapses to a single patch — the weighted average becomes a lookup. For example, with four patches:</p>
+<p><span class="math display">\[\text{soft: } \mathbf{a} = \begin{bmatrix} 0.00 &amp; 0.12 &amp; 0.76 &amp; 0.12 \end{bmatrix}\]</span></p>
+<p><span class="math display">\[\text{hard: } \mathbf{a} = \begin{bmatrix} 0 &amp; 0 &amp; 1 &amp; 0 \end{bmatrix}\]</span></p>
+<p>In the soft case, patches 2, 3, and 4 all contribute to <span class="math inline">\(\mathbf{y}_n\)</span>. In the hard case, <span class="math inline">\(\mathbf{y}_n = \mathbf{v}_3\)</span> — the boat attends to one patch and ignores everything else. This is a problem because we built self-attention to aggregate context from many patches. The problem is not that hard attention is wrong. It isn’t. Hard decisions are everywhere in machine learning and real life. A multi-class classifier may ultimately assign one class. In an image, one patch may genuinely dominate. The problem is when attention becomes hard purely because the score magnitudes have grown, not because an image patch is overly dominant.</p>
+<p>We have seen that the typical size of a score gap also grows as <span class="math inline">\(\sqrt{d_k}\)</span>. Let’s see this in action</p>
+<p>Fix the relative structure of the scores for the boat patch — near water is the most relevant patch, far water is second. The gap between them is of order <span class="math inline">\(\sqrt{d_k}\)</span>. Here is what happens to the attention ratio and the weight on the top patch as <span class="math inline">\(d_k\)</span> grows:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><span class="math inline">\(d_k\)</span></th>
+<th><span class="math inline">\(\text{std}(\mathcal{S}_{nm})\)</span></th>
+<th>Typical gap <span class="math inline">\(S_{n3} - S_{n4}\)</span></th>
+<th><span class="math inline">\(\frac{a_{n3}}{a_{n4}} = e^{\text{gap}}\)</span></th>
+<th><span class="math inline">\(a_{n3}\)</span> (approx)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>1</td>
+<td><span class="math inline">\(\sim 1\)</span></td>
+<td><span class="math inline">\(\sim e^1 \approx 2.7\)</span></td>
+<td><span class="math inline">\(\sim 0.55\)</span></td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>2</td>
+<td><span class="math inline">\(\sim 2\)</span></td>
+<td><span class="math inline">\(\sim e^2 \approx 7.4\)</span></td>
+<td><span class="math inline">\(\sim 0.74\)</span></td>
+</tr>
+<tr class="odd">
+<td>16</td>
+<td>4</td>
+<td><span class="math inline">\(\sim 4\)</span></td>
+<td><span class="math inline">\(\sim e^4 \approx 55\)</span></td>
+<td><span class="math inline">\(\sim 0.98\)</span></td>
+</tr>
+<tr class="even">
+<td>64</td>
+<td>8</td>
+<td><span class="math inline">\(\sim 8\)</span></td>
+<td><span class="math inline">\(\sim e^8 \approx 3000\)</span></td>
+<td><span class="math inline">\(\approx 1\)</span></td>
+</tr>
+<tr class="odd">
+<td>256</td>
+<td>16</td>
+<td><span class="math inline">\(\sim 16\)</span></td>
+<td><span class="math inline">\(\sim e^{16} \approx 9 \times 10^6\)</span></td>
+<td><span class="math inline">\(\approx 1\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>By <span class="math inline">\(d_k = 64\)</span> — a small, standard value — the ratio of the top patch to the second patch is already 3000:1. Far water has effectively stopped contributing to the weighted average. The boat is just attending to one patch and ignoring everything else. Nothing changed — not the ranking, not the image, not the relative relevance of the patches. Only the scale of the scores grew with <span class="math inline">\(d_k\)</span>. That alone was enough to collapse soft attention into hard attention.</p>
+<p>The ranking did not change. The image did not change. The relative relevance of the patches did not change. Only the scale of the scores changed — and that was enough.</p>
+<p>This is the problem. Not hard attention in principle. Hard attention for the wrong reason.</p>
+<p><strong>Enter <span class="math inline">\(\frac{1}{\sqrt{d_k}}\)</span>.</strong> One number. Divide the scores by it before softmax sees them. That is the entire fix.</p>
+<p>The typical gap becomes:</p>
+<p><span class="math display">\[\frac{S_{n3} - S_{n4}}{\sqrt{d_k}} \sim \mathcal{O}(1)\]</span></p>
+<p>independent of <span class="math inline">\(d_k\)</span>. The attention ratio stays bounded:</p>
+<p><span class="math display">\[\frac{a_{n3}}{a_{n4}} = \exp\left(\frac{S_{n3} - S_{n4}}{\sqrt{d_k}}\right)
+\sim e^1 \approx 2.7\]</span></p>
+<p>regardless of how large <span class="math inline">\(d_k\)</span> gets. The score gaps that were growing without bound are now pinned to order 1. Soft attention is preserved. The weighted average remains a genuine average — not a lookup. And the number that does all of this is <span class="math inline">\(\sqrt{d_k}\)</span> — the very same quantity that was causing the problem in the first place.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
