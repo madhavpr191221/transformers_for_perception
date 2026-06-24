@@ -1425,7 +1425,7 @@ Figure&nbsp;7: Multi-head self-attention. Each head produces its own output matr
 </section>
 <section id="why-am-i-not-showing-an-attention-heatmap" class="level3" data-number="6.2">
 <h3 data-number="6.2" class="anchored" data-anchor-id="why-am-i-not-showing-an-attention-heatmap"><span class="header-section-number">6.2</span> Why am I not showing an attention heatmap</h3>
-<p>I originally thought of adding an interactive attention heatmap here, which shows the relative relevance of patches. But there is a trap. Unless the projection matrices have been learned from a well-defined task, the heatmap is not meaningful. With random (W_Q), (W_K), and (W_V), the attention matrix only shows random dot-product geometry passed through softmax.</p>
+<p>I originally thought of adding an interactive attention heatmap here, which shows the relative relevance of patches. But there is a trap. Unless the projection matrices have been learned from a well-defined task, the heatmap is not meaningful. With random <span class="math inline">\(W_Q\)</span>, <span class="math inline">\(W_K\)</span>, and <span class="math inline">\(W_V\)</span>, the attention matrix only shows random dot-product geometry passed through softmax.</p>
 <p>The important object is the computation itself:</p>
 <p><span class="math display">\[
 Y
@@ -1446,6 +1446,22 @@ V.
 </section>
 <section id="conclusion" class="level2" data-number="7">
 <h2 data-number="7" class="anchored" data-anchor-id="conclusion"><span class="header-section-number">7</span> Conclusion</h2>
+<p>Self-attention is a precise computation: compare patches, normalize the comparisons, and use the resulting weights to mix information.</p>
+<p>Queries and keys create the comparisons. Values carry the information. Softmax decides how strongly each patch contributes.</p>
+<p>But random attention is not understanding.</p>
+<p>The formula becomes useful only when it sits inside a larger learnable system: with positional information, nonlinear layers, residual connections, normalization, losses, and gradients.</p>
+<p>That is where we go next.</p>
+<p>And yes — the next post will have code. We will move from the attention formula to the surrounding learnable block, with small examples for residual connections, layer normalization, nonlinear layers, and positional information. Wherever an interactive demo is honest and useful, I will include one.</p>
+<div id="fig-what_comes_next" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-what_comes_next-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/what_comes_next.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-what_comes_next-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: What’s Coming Next
+</figcaption>
+</figure>
+</div>
 
 
 </section>
@@ -1524,7 +1540,7 @@ V.
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/madhavpr191221\.github\.io\/transformers_for_perception\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

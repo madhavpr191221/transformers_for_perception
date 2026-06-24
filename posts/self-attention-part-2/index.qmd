@@ -2,10 +2,10 @@
 
 ---
 title: "Self-Attention From First Principles — Part 2"
-subtitle: "Scaled dot-product attention, multi-head attention, and the code"
+subtitle: "Scaled dot-product attention, multi-head attention"
 author: "Madhav Prashanth Ramachandran"
 date: "2026-06-24"
-categories: [transformers, vision, attention, linear-algebra, numpy, pytorch]
+categories: [transformers, vision, attention, linear-algebra]
 format:
   html:
     toc: true
@@ -25,14 +25,14 @@ a similarity score, and a weighted average. Almost, because we left two things u
 
 **First, the softmax itself. **
 
-Machine learning practioners recognize softmax immediately. But, it turns out that the raw form of softmax needs a simple but non-trivial modification to make the computation numerically and statistically well-behaved. Rather than simply stating it as a fact, we will derive it from first principles with a simple numerical example to support the theory. 
+Machine learning practitioners recognize softmax immediately. But, it turns out that the raw form of softmax needs a simple but non-trivial modification to make the computation numerically and statistically well-behaved. Rather than simply stating it as a fact, we will derive it from first principles with a simple numerical example to support the theory. 
 
 **Second, the value vector.**
 
 We averaged raw patch vectors $\mathbf{x}_m$ 
 throughout Part 1, and flagged at the end that real self-attention 
 averages a separately learned projection instead. We deferred the 
-construction intetionally. This post builds it. 
+construction intentionally. This post builds it. 
 
 Spoiler Alert: The value vector isn't magical. It is just matrix-vector multiplication
 
@@ -816,7 +816,7 @@ $d_k$.
 
 $$\text{Var}(\mathcal{S}_{nm}) = d_k \quad \text{exactly}$$
 
-+**Can we fix this?** Yes — by whitening $\mathbf{q}_n$ and 
+**Can we fix this?** Yes — by whitening $\mathbf{q}_n$ and 
 $\mathbf{k}_m$, exactly as we whitened the data in Part 1. If 
 $\Sigma_Q = I$, then $[\Sigma_Q]_{ij} = 0$ for all $i \neq j$, and 
 the covariance terms vanish exactly, giving 
@@ -1624,9 +1624,9 @@ Once the parameters are learned, the same computation can produce meaningful att
 
 That immediately raises the real question: How are these parameters learned?
 
-That is where self-attention stops being just a matrix formula and becomes part of a neural network.
+That is where self-attention stops being just a matrix formula and becomes part of a larger learnable block.
 
-In the next post, we will place self-attention inside a larger learnable block. We will bring in positional information, nonlinear activations, residual connections, layer normalization, and the machinery that allows gradients to shape $W_Q$, $W_K$, $W_V$, and the rest of the model.
+In the next post, we will place self-attention inside this block. We will bring in positional information, nonlinear activations, residual connections, layer normalization, and the machinery that allows gradients to shape $W_Q$, $W_K$, $W_V$, and the rest of the model.
 
 For images, positional information is not a side detail. A patch also represents where it came from. And if you are familiar with positional encodings from language models, expect a different story here. This is self-attention from a vision first angle. 
 
