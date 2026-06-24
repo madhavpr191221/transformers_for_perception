@@ -244,7 +244,7 @@ K = XW_K^\top \in \mathbb{R}^{N \times d_k}.
 $$
 
 
-![Projection of image patches into query and key spaces.](images/query_and_key_matrices.png)
+![Projection of image patches into query and key spaces.](images/query_and_key_matrices.png){#fig-query-key-matrices}
 
 ### The Score Matrix
 
@@ -359,7 +359,7 @@ S
 QK^\top.
 $$
 
-![Constructing the attention score matrix as $S = QK^\top$.](images/q_k_transpose.png)
+![Constructing the attention score matrix as $S = QK^\top$.](images/q_k_transpose.png){#fig-q_k_transpose}
 
 ### Analogy with the Mahalanobis Distance
 
@@ -415,7 +415,7 @@ We now have a score matrix $$ S = QK^\top \in \mathbb{R}^{N \times N}. $$ The en
 
 Why row by row? Because each row corresponds to one patch asking its own question. Suppose patch $n$ contains a boat. The raw score answers the question: for this boat patch, how relevant is every other patch? Softmax just normalizes across this row and turns them into probabilities. 
 
-![Row-wise softmax in self-attention](images/row_wise_softmax.png)
+![Row-wise softmax in self-attention](images/row_wise_softmax.png){#fig-row-wise-softmax}
 
 ### Softmax Has a Scale Problem
 
@@ -887,6 +887,9 @@ relevance of the patches. Only the scale of the scores grew with
 $d_k$. That alone was enough to collapse soft attention into hard 
 attention.
 
+![Effect of $d_k$ on Attention Weights — Same Patches, Different Scale"
+](images/hard_vs_soft_attention.png){#fig-hard_vs_soft_attention}
+
 The ranking did not change. The image did not change. The relative 
 relevance of the patches did not change. Only the scale of the scores 
 changed — and that was enough.
@@ -908,6 +911,616 @@ $$\frac{a_{n3}}{a_{n4}} = \exp\left(\frac{S_{n3} - S_{n4}}{\sqrt{d_k}}\right)
 
 regardless of how large $d_k$ gets. The score gaps that were growing 
 without bound are now pinned to order 1. Soft attention is preserved. 
-The weighted average remains a genuine average — not a lookup. And 
-the number that does all of this is $\sqrt{d_k}$ — the very same 
-quantity that was causing the problem in the first place.
+The weighted average remains a genuine average.
+
+Why $\sqrt{d_k}$ specifically, and not some other constant? Because 
+it is the exact correction needed to restore unit variance. Under our 
+earlier assumptions:
+
+
+$$\text{Var}\left(\frac{\mathcal{S}_{nm}}{\sqrt{d_k}}\right) 
+= \frac{1}{d_k}\text{Var}(\mathcal{S}_{nm}) = \frac{d_k}{d_k} = 1$$
+
+The scaled score has variance (and standard deviation) exactly 1, independent of $d_k$. It is the unique constant that restores unit variance. 
+
+### The Gradient Problem: When Softmax Stops Passing Derivatives
+
+**A brief review of derivative matrices.** The notation we use 
+follows a specific convention — worth stating clearly since different 
+textbooks use different layouts.
+
+For a vector-valued function $\mathbf{f} : \mathbb{R}^n \to 
+\mathbb{R}^m$, the **derivative matrix** evaluated at a point 
+$\mathbf{a} \in \mathbb{R}^n$ is:
+
+$$D_{\mathbf{x}}\mathbf{f}(\mathbf{a}) \in \mathbb{R}^{m \times n}$$
+
+The $(i,j)$-th entry is $\frac{\partial f_i}{\partial x_j}$ evaluated 
+at $\mathbf{x} = \mathbf{a}$ — rows correspond to output components, 
+columns to input components. This is the Jacobian matrix, written in 
+numerator layout.
+
+For a scalar-valued function $\mathcal{L} : \mathbb{R}^n \to 
+\mathbb{R}$, the derivative matrix is a $1 \times n$ row vector:
+
+$$D_{\mathbf{x}}\mathcal{L}(\mathbf{a}) \in \mathbb{R}^{1 \times n}, 
+\qquad [D_{\mathbf{x}}\mathcal{L}]_j = \frac{\partial \mathcal{L}}
+{\partial x_j}$$
+
+The **gradient** is its transpose — always a column vector:
+
+$$\nabla_{\mathbf{x}}\mathcal{L}(\mathbf{a}) = 
+(D_{\mathbf{x}}\mathcal{L}(\mathbf{a}))^\top \in \mathbb{R}^n$$
+
+**The chain rule — scalar output.** For a composition $(\mathcal{L} \circ \mathbf{g})(\mathbf{x})$ 
+with $\mathbf{g} : \mathbb{R}^n \to \mathbb{R}^m$ and $\mathcal{L} : \mathbb{R}^m \to \mathbb{R}$, 
+evaluated at $\mathbf{a} \in \mathbb{R}^n$:
+
+$$D_{\mathbf{x}}(\mathcal{L} \circ \mathbf{g})(\mathbf{a}) = 
+\underbrace{D_{\mathbf{g}}\mathcal{L}\big(\mathbf{g}(\mathbf{a})\big)}_{1 \times m} 
+\cdot \underbrace{D_{\mathbf{x}}\mathbf{g}(\mathbf{a})}_{m \times n} 
+\in \mathbb{R}^{1 \times n}$$
+
+The gradient is the transpose of the derivative matrix:
+
+$$\nabla_{\mathbf{x}}(\mathcal{L} \circ \mathbf{g})(\mathbf{a}) = 
+\left(D_{\mathbf{x}}\mathbf{g}(\mathbf{a})\right)^\top 
+\underbrace{\left(D_{\mathbf{g}}\mathcal{L}\big(\mathbf{g}(\mathbf{a})\big)\right)^\top}_{
+=\,\nabla_{\mathbf{g}}\mathcal{L}(\mathbf{g}(\mathbf{a}))\,\in\,\mathbb{R}^m} 
+\in \mathbb{R}^n$$
+
+**The chain rule — vector output.** For a composition $(\mathbf{h} \circ \mathbf{g})(\mathbf{x})$ 
+with $\mathbf{g} : \mathbb{R}^n \to \mathbb{R}^m$ and $\mathbf{h} : \mathbb{R}^m \to \mathbb{R}^p$, 
+evaluated at $\mathbf{a} \in \mathbb{R}^n$:
+
+$$D_{\mathbf{x}}(\mathbf{h} \circ \mathbf{g})(\mathbf{a}) = 
+\underbrace{D_{\mathbf{g}}\mathbf{h}\big(\mathbf{g}(\mathbf{a})\big)}_{p \times m} 
+\cdot \underbrace{D_{\mathbf{x}}\mathbf{g}(\mathbf{a})}_{m \times n} 
+\in \mathbb{R}^{p \times n}$$
+
+The scalar-output case is the special case $p = 1$, where 
+$D_{\mathbf{g}}\mathbf{h}\big(\mathbf{g}(\mathbf{a})\big)$ collapses to a $1 \times m$ 
+row vector. When $p > 1$, the result is a full $p \times n$ Jacobian matrix — 
+the gradient is not defined for vector-valued functions.
+
+Dimensions multiply as matrix products should — the inner dimensions 
+match. This is the rule we will use to track how gradients flow 
+through softmax back to $W_Q$ and $W_K$.
+
+::: {.callout-note appearance="minimal"}
+You may have seen the Jacobian written as $J_f$ or $\frac{\partial 
+\mathbf{f}}{\partial \mathbf{x}}$ in other texts. Some sources use 
+denominator layout, where the Jacobian is $n \times m$ instead of 
+$m \times n$. We follow numerator layout throughout — rows are output 
+components, columns are input components — and will track dimensions 
+explicitly at every step.
+
+Throughout, we use the coordinate-free definition of the derivative. 
+For $\mathbf{f} : \mathbb{R}^n \to \mathbb{R}^m$, the derivative of 
+$\mathbf{f}$ at $\mathbf{a} \in \mathbb{R}^n$ is the unique linear map 
+$D_{\mathbf{x}}\mathbf{f}(\mathbf{a}) : \mathbb{R}^n \to \mathbb{R}^m$ 
+such that:
+
+$$\lim_{\mathbf{h} \to \mathbf{0}} 
+\frac{\|\mathbf{f}(\mathbf{a} + \mathbf{h}) - \mathbf{f}(\mathbf{a}) - 
+D_{\mathbf{x}}\mathbf{f}(\mathbf{a})\,\mathbf{h}\|}{\|\mathbf{h}\|} = 0$$
+
+That is, the remainder $\mathbf{f}(\mathbf{a} + \mathbf{h}) - \mathbf{f}(\mathbf{a}) - 
+D_{\mathbf{x}}\mathbf{f}(\mathbf{a})\,\mathbf{h}$ goes to zero 
+strictly faster than $\|\mathbf{h}\|$ as $\mathbf{h} \to \mathbf{0}$ — 
+written $o(\|\mathbf{h}\|)$ in little-oh notation. 
+The linear map $D_{\mathbf{x}}\mathbf{f}(\mathbf{a})$ is therefore 
+the best local linear approximation to $\mathbf{f}$ near $\mathbf{a}$: 
+it captures everything about $\mathbf{f}$ at first order, and the error 
+in using it is negligible compared to the size of the perturbation $\mathbf{h}$.
+In coordinates, $D_{\mathbf{x}}\mathbf{f}(\mathbf{a})$ is represented by 
+the $m \times n$ matrix of partial derivatives with $(i,j)$-th entry 
+$\partial f_i / \partial x_j$ evaluated at $\mathbf{a}$.
+:::
+
+
+In machine learning, we optimize some loss $\mathcal{L}$ by computing 
+gradients with respect to the parameters we want to learn. Here, those 
+parameters include $W_Q$ and $W_K$. The gradient of $\mathcal{L}$ 
+with respect to $W_Q$ passes through the attention weights $\mathbf{a}$, 
+which pass through the scores $\mathbf{s}$, which pass through softmax. 
+By the chain rule:
+
+$$D_{W_Q}\mathcal{L} = D_{\mathbf{a}}\mathcal{L} \cdot 
+D_{\mathbf{s}}\mathbf{a} \cdot D_{W_Q}\mathbf{s}$$
+
+The middle term — $D_{\mathbf{s}}\mathbf{a}$, the Jacobian of softmax 
+— is the one that matters. If it collapses to zero, the entire 
+gradient collapses to zero, regardless of how large $D_{\mathbf{a}}
+\mathcal{L}$ is. $W_Q$ and $W_K$ receive no signal. They stop 
+updating.
+
+So: does the Jacobian of softmax collapse in the hard attention regime?
+
+**Computing the Jacobian.** Fix row $n$ and drop the subscript. Let 
+$\mathbf{s} = (s_1, \ldots, s_N)$ be the scores and $\mathbf{a} = 
+\text{softmax}(\mathbf{s})$ the attention weights. The $(m, j)$ entry 
+of $D_{\mathbf{s}}\mathbf{a}$ is $\frac{\partial a_m}{\partial s_j}$.
+
+**Case 1: $m = j$**
+
+$$\frac{\partial a_m}{\partial s_m} = 
+\frac{e^{s_m}\sum_{m'} e^{s_{m'}} - e^{s_m} \cdot e^{s_m}}
+{\left(\sum_{m'} e^{s_{m'}}\right)^2} = a_m - a_m^2 = a_m(1 - a_m)$$
+
+**Case 2: $m \neq j$**
+
+$$\frac{\partial a_m}{\partial s_j} = 
+\frac{0 - e^{s_m} \cdot e^{s_j}}
+{\left(\sum_{m'} e^{s_{m'}}\right)^2} = -a_m a_j$$
+
+The full Jacobian:
+$$D_{\mathbf{s}}\mathbf{a} = 
+\begin{pmatrix}
+a_1(1-a_1) & -a_1 a_2 & \cdots & -a_1 a_N \\
+-a_2 a_1 & a_2(1-a_2) & \cdots & -a_2 a_N \\
+\vdots & \vdots & \ddots & \vdots \\
+-a_N a_1 & -a_N a_2 & \cdots & a_N(1-a_N)
+\end{pmatrix} \in \mathbb{R}^{N \times N}$$
+
+
+**Now substitute the hard attention regime.** From the boat/water 
+example at $d_k = 64$: $a_3 \approx 1$, and $a_1 \approx a_2 \approx 
+a_4 \approx 0$.
+
+Diagonal terms:
+
+$$a_m(1 - a_m): \quad a_3(1 - a_3) \approx 1 \cdot 0 = 0, \quad 
+a_m(1 - a_m) \approx 0 \cdot 1 = 0 \quad \text{for } m \neq 3$$
+
+Off-diagonal terms:
+
+$$-a_m a_j \approx 0 \quad \text{for all } m, j$$
+
+since at least one of $a_m$, $a_j$ is $\approx 0$. So:
+
+$$D_{\mathbf{s}}\mathbf{a} \approx 0$$
+
+The Jacobian is approximately the zero matrix. The gradient:
+
+$$D_{W_Q}\mathcal{L} = D_{\mathbf{a}}\mathcal{L} \cdot 
+\underbrace{D_{\mathbf{s}}\mathbf{a}}_{\approx\, 0} \cdot 
+D_{W_Q}\mathbf{s} \approx 0$$
+
+$W_Q$ and $W_K$ receive essentially zero gradient — not because the 
+loss is small, but because the Jacobian of softmax has collapsed. The 
+model is blind to its own mistakes.
+
+**In the soft-attention regime** — $d_k$ small, scores of order 1, 
+$a_3 \approx 0.76$, $a_4 \approx 0.12$ — the picture is completely 
+different:
+
+$$a_3(1 - a_3) \approx 0.76 \times 0.24 \approx 0.18$$
+$$a_4(1 - a_4) \approx 0.12 \times 0.88 \approx 0.11$$
+$$-a_3 a_4 \approx -0.09$$
+
+The Jacobian is nonzero. Gradients flow. $W_Q$ and $W_K$ update. The 
+model learns.
+
+**The fix.** The $\frac{1}{\sqrt{d_k}}$ scaling attacks the root cause directly. The root cause was not softmax by itself. The root cause was that the dot-product scores grew in scale with $d_k$. Large scores made the attention row collapse toward a hard selection. The same collapse made the softmax Jacobian nearly zero. Dividing the scores by $\sqrt{d_k}$ keeps their scale under control before softmax sees them. One division fixes both problems.
+
+Before moving to value vectors, let us collect the pieces.
+
+### Scaled Dot-Product Attention: The Attention Matrix
+
+We start with the patch matrix
+
+$$
+X \in \mathbb{R}^{N \times D}.
+$$
+
+The rows of $X$ are the patch vectors:
+
+$$
+X
+=
+\begin{bmatrix}
+\mathbf{x}_1^\top \\
+\mathbf{x}_2^\top \\
+\vdots \\
+\mathbf{x}_N^\top
+\end{bmatrix}.
+$$
+
+Using the query and key projection matrices
+
+$$
+W_Q, W_K \in \mathbb{R}^{d_k \times D},
+$$
+
+we form
+
+$$
+Q = XW_Q^\top \in \mathbb{R}^{N \times d_k},
+\qquad
+K = XW_K^\top \in \mathbb{R}^{N \times d_k}.
+$$
+
+The raw score matrix is
+
+$$
+S = QK^\top \in \mathbb{R}^{N \times N}.
+$$
+
+The scaled score matrix is
+
+$$
+\widetilde{S}
+=
+\frac{QK^\top}{\sqrt{d_k}}
+\in \mathbb{R}^{N \times N}.
+$$
+
+Finally, we apply softmax row-wise:
+
+$$
+A
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\widetilde{S}
+\right).
+$$
+
+Equivalently,
+
+$$
+A
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right).
+$$
+
+For each row $n$,
+
+$$
+a_{nm}
+=
+\frac{
+\exp\left(S_{nm}/\sqrt{d_k}\right)
+}{
+\sum_{m'=1}^{N}
+\exp\left(S_{nm'}/\sqrt{d_k}\right)
+}.
+$$
+
+This matrix $A$ is the attention matrix. Its $n$-th row tells us how patch $n$ distributes its attention over all patches. 
+
+There is one piece left in the self-attention story. The attention matrix tells us where each patch looks. It does not yet tell us what information gets carried back. That is where value vectors enter.
+
+
+## The Value Vectors
+
+The attention weights only tell us **where to look**. They do not yet tell us **what to bring back**.
+
+That is the role of the value vectors.
+
+For each patch vector $\mathbf{x}_m \in \mathbb{R}^{D}$, define its value vector as
+
+$$
+\mathbf{v}_m
+=
+W_V \mathbf{x}_m,
+\qquad
+\mathbf{v}_m \in \mathbb{R}^{d_v},
+$$
+
+where
+
+$$
+W_V \in \mathbb{R}^{d_v \times D}.
+$$
+
+As before, if we stack all patch vectors row-wise in
+
+$$
+X \in \mathbb{R}^{N \times D},
+$$
+
+then the value matrix is
+
+$$
+V
+=
+XW_V^\top
+\in
+\mathbb{R}^{N \times d_v}.
+$$
+
+So each row of $V$ contains the value vector of one patch:
+
+$$
+V
+=
+\begin{bmatrix}
+\mathbf{v}_1^\top \\
+\mathbf{v}_2^\top \\
+\vdots \\
+\mathbf{v}_N^\top
+\end{bmatrix}.
+$$
+
+Now recall that row $n$ of the attention matrix contains the weights
+
+$$
+\begin{bmatrix}
+a_{n1} & a_{n2} & \cdots & a_{nN}
+\end{bmatrix}.
+$$
+
+These weights tell us how much patch $n$ attends to every patch.
+
+The output vector for patch $n$ is the weighted sum of the value vectors:
+
+$$
+\mathbf{y}_n
+=
+\sum_{m=1}^{N}
+a_{nm}\mathbf{v}_m.
+$$
+
+This is the key point. Patch $n$ gathers information from all patches, weighted by attention.
+
+If the boat patch assigns high weight to nearby water, then the value vector of nearby water contributes strongly to the boat patch's new representation.If it assigns small weight to sky, then the sky value vector contributes very little.
+
+So queries and keys decide the weights. Values carry the information.
+
+![Queries and keys decide the attention weights; value vectors are what get aggregated to produce the output vector $\mathbf{y}_n$.](images/value_vector.png){#fig-value-vectors}
+
+### Matrix Form of the Output
+
+For one patch $n$, we wrote the output vector as
+
+$$
+\mathbf{y}_n
+=
+\sum_{m=1}^{N}
+a_{nm}\mathbf{v}_m.
+$$
+
+This is one row of the final output. Now do the same thing for every patch. Stack the output vectors row-wise:
+
+$$
+Y
+=
+\begin{bmatrix}
+\mathbf{y}_1^\top \\
+\mathbf{y}_2^\top \\
+\vdots \\
+\mathbf{y}_N^\top
+\end{bmatrix}
+\in
+\mathbb{R}^{N \times d_v}.
+$$
+
+Recall that
+
+$$
+A \in \mathbb{R}^{N \times N},
+\qquad
+V \in \mathbb{R}^{N \times d_v}.
+$$
+
+So the matrix product
+
+$$
+AV
+$$
+
+has shape
+
+$$
+(N \times N)(N \times d_v)
+=
+N \times d_v.
+$$
+
+The $n$-th row of $AV$ is
+
+$$
+\sum_{m=1}^{N}
+a_{nm}\mathbf{v}_m^\top.
+$$
+
+Therefore,
+
+$$
+Y = AV.
+$$
+
+This is the full self-attention output.
+
+Each row of $A$ decides how one patch looks at all patches.
+
+Each row of $V$ carries the information available at one patch.
+
+Multiplying them gives one new vector per patch.
+
+## Algorithm: Self-Attention
+
+We can now collect the whole story.
+
+Start with the patch matrix
+
+$$
+X \in \mathbb{R}^{N \times D}.
+$$
+
+Each row of $X$ is one patch vector:
+
+$$
+X
+=
+\begin{bmatrix}
+\mathbf{x}_1^\top \\
+\mathbf{x}_2^\top \\
+\vdots \\
+\mathbf{x}_N^\top
+\end{bmatrix}.
+$$
+
+We learn three projection matrices:
+
+$$
+W_Q \in \mathbb{R}^{d_k \times D},
+\qquad
+W_K \in \mathbb{R}^{d_k \times D},
+\qquad
+W_V \in \mathbb{R}^{d_v \times D}.
+$$
+
+These produce the query, key, and value matrices:
+
+$$
+Q = XW_Q^\top \in \mathbb{R}^{N \times d_k},
+$$
+
+$$
+K = XW_K^\top \in \mathbb{R}^{N \times d_k},
+$$
+
+$$
+V = XW_V^\top \in \mathbb{R}^{N \times d_v}.
+$$
+
+Next, compute the scaled score matrix:
+
+$$
+\widetilde{S}
+=
+\frac{QK^\top}{\sqrt{d_k}}
+\in
+\mathbb{R}^{N \times N}.
+$$
+
+Apply softmax row-wise to obtain the attention matrix:
+
+$$
+A
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right)
+\in
+\mathbb{R}^{N \times N}.
+$$
+
+Finally, aggregate the value vectors:
+
+$$
+Y = AV.
+$$
+
+Since
+
+$$
+A \in \mathbb{R}^{N \times N},
+\qquad
+V \in \mathbb{R}^{N \times d_v},
+$$
+
+we get
+
+$$
+Y \in \mathbb{R}^{N \times d_v}.
+$$
+
+This is the output of self-attention.
+
+In one line:
+
+$$
+\boxed{
+Y
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right)
+V
+}
+$$
+
+with
+
+$$
+Q = XW_Q^\top,
+\qquad
+K = XW_K^\top,
+\qquad
+V = XW_V^\top.
+$$
+
+This is the **single-head scaled dot-product self-attention**.
+
+::: {.callout-note appearance="minimal"}
+### A note on the usual machine learning notation
+
+In this post, we defined individual query, key, and value vectors using column vectors:
+
+$$
+\mathbf{q}_n = W_Q\mathbf{x}_n,
+\qquad
+\mathbf{k}_n = W_K\mathbf{x}_n,
+\qquad
+\mathbf{v}_n = W_V\mathbf{x}_n.
+$$
+
+So the projection matrices have shapes
+
+$$
+W_Q, W_K \in \mathbb{R}^{d_k \times D},
+\qquad
+W_V \in \mathbb{R}^{d_v \times D}.
+$$
+
+Since the data matrix $X$ stores patch vectors row-wise, the matrix formulas become
+
+$$
+Q = XW_Q^\top,
+\qquad
+K = XW_K^\top,
+\qquad
+V = XW_V^\top.
+$$
+
+In much of the machine learning literature, the same operation is written as
+
+$$
+Q = XW_Q,
+\qquad
+K = XW_K,
+\qquad
+V = XW_V,
+$$
+
+with
+
+$$
+W_Q, W_K \in \mathbb{R}^{D \times d_k},
+\qquad
+W_V \in \mathbb{R}^{D \times d_v}.
+$$
+
+This is not a different attention mechanism. It is only a different convention for storing the projection matrices.
+
+The attention formula is the same:
+
+$$
+\operatorname{Attention}(Q,K,V)
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right)V.
+$$
+
+
