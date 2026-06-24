@@ -1603,3 +1603,51 @@ note the distinction.
 
 ![Multi-head self-attention. Each head produces its own output matrix $Y^{(h)} \in \mathbb{R}^{N \times d_v}$. The head outputs are concatenated column-wise and projected back into the original $D$-dimensional patch space.](images/multi-head-attention.png){#fig-multi-head-attention}
 
+### Why am I not showing an attention heatmap 
+
+I originally thought of adding an interactive attention heatmap here, which shows the relative relevance of patches. But there is a trap.
+Unless the projection matrices have been learned from a well-defined task, the heatmap is not meaningful. With random $W_Q$, $W_K$, and $W_V$, the attention matrix only shows random dot-product geometry passed through softmax.
+
+The important object is the computation itself:
+
+$$
+Y
+=
+\operatorname{softmax}_{\mathrm{row}}
+\left(
+\frac{QK^\top}{\sqrt{d_k}}
+\right)
+V.
+$$
+
+Once the parameters are learned, the same computation can produce meaningful attention patterns. But before learning, the heatmap is decoration.
+
+That immediately raises the real question: How are these parameters learned?
+
+That is where self-attention stops being just a matrix formula and becomes part of a neural network.
+
+In the next post, we will place self-attention inside a larger learnable block. We will bring in positional information, nonlinear activations, residual connections, layer normalization, and the machinery that allows gradients to shape $W_Q$, $W_K$, $W_V$, and the rest of the model.
+
+For images, positional information is not a side detail. A patch also represents where it came from. And if you are familiar with positional encodings from language models, expect a different story here. This is self-attention from a vision first angle. 
+
+Images have their own geometry. Gradient-based learning adjusts the matrices until the right patches start to matter. 
+And only through this learned geometry does a boat patch know that nearby water matters.
+
+
+## Conclusion 
+
+Self-attention is a precise computation: compare patches, normalize the comparisons, and use the resulting weights to mix information.
+
+Queries and keys create the comparisons. Values carry the information. Softmax decides how strongly each patch contributes.
+
+But random attention is not understanding.
+
+The formula becomes useful only when it sits inside a larger learnable system: with positional information, nonlinear layers, residual connections, normalization, losses, and gradients.
+
+That is where we go next.
+
+And yes — the next post will have code. We will move from the attention formula to the surrounding learnable block, with small examples for residual connections, layer normalization, nonlinear layers, and positional information. Wherever an interactive demo is honest and useful, I will include one.
+
+
+![What's Coming Next](images/what_comes_next.png){#fig-what_comes_next}
+
