@@ -1,17 +1,11 @@
 {
-  "posts/attention-from-scratch/index.qmd": {
-    "index.html": "71435a27"
-  },
   "posts/chapter-01.qmd": {
-    "chapter-01.html": "6186c01b"
-  },
-  "posts/posts/attention-from-scratch/index.qmd": {
-    "index.html": "2cd18653"
+    "chapter-01.html": "1252ca97"
   },
   "posts/self-attention-from-first-principles/index.qmd": {
-    "index.html": "632d938d"
+    "index.html": "fc852d1f"
   },
   "posts/self-attention-part-2/index.qmd": {
-    "index.html": "5b9ad116"
+    "index.html": "05389b64"
   }
 }

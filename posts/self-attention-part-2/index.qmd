@@ -1600,3 +1600,6 @@ value dimension are independent design choices. The original paper
 sets them equal for simplicity. We follow that convention here but 
 note the distinction.
 :::
+
+![Multi-head self-attention. Each head produces its own output matrix $Y^{(h)} \in \mathbb{R}^{N \times d_v}$. The head outputs are concatenated column-wise and projected back into the original $D$-dimensional patch space.](images/multi-head-attention.png){#fig-multi-head-attention}
+
