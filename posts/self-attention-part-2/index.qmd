@@ -1549,19 +1549,19 @@ $\mathbb{R}^{N \times D}$.
 We use a superscript $(h)$ to denote quantities belonging to head $h$, 
 where $h = 1, 2, \ldots, H$. Each head has its own projection matrices:
 
-$$W_Q^{(h)} \in \mathbb{R}^{D \times d_k}, \qquad 
-W_K^{(h)} \in \mathbb{R}^{D \times d_k}, \qquad 
-W_V^{(h)} \in \mathbb{R}^{D \times d_v}$$
+$$W_Q^{(h)} \in \mathbb{R}^{d_k \times D}, \qquad 
+W_K^{(h)} \in \mathbb{R}^{d_k \times D}, \qquad 
+W_V^{(h)} \in \mathbb{R}^{d_v \times D}$$
 
 and produces its own query, key, and value matrices:
 
-$$Q^{(h)} = XW_Q^{(h)} \in \mathbb{R}^{N \times d_k}, \qquad 
-K^{(h)} = XW_K^{(h)} \in \mathbb{R}^{N \times d_k}, \qquad 
-V^{(h)} = XW_V^{(h)} \in \mathbb{R}^{N \times d_v}$$
+$$Q^{(h)} = XW_Q^{(h)\top} \in \mathbb{R}^{N \times d_k}, \qquad 
+K^{(h)} = XW_K^{(h)\top} \in \mathbb{R}^{N \times d_k}, \qquad 
+V^{(h)} = XW_V^{(h)\top} \in \mathbb{R}^{N \times d_v}$$
 
 and its own attention output:
 
-$$Y^{(h)} = \text{softmax}\left(\frac{Q^{(h)}{K^{(h)}}^\top}
+$$Y^{(h)} = \operatorname{softmax}_{\mathrm{row}}\left(\frac{Q^{(h)}{K^{(h)}}^\top}
 {\sqrt{d_k}}\right) V^{(h)} \in \mathbb{R}^{N \times d_v}$$
 
 **Step 1: Concatenate.** The $H$ head outputs are concatenated 

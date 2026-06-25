@@ -180,14 +180,12 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Self-Attention From First Principles — Part 2</h1>
-<p class="subtitle lead">Scaled dot-product attention, multi-head attention, and the code</p>
+<p class="subtitle lead">Scaled dot-product attention, multi-head attention</p>
   <div class="quarto-categories">
     <div class="quarto-category">transformers</div>
     <div class="quarto-category">vision</div>
     <div class="quarto-category">attention</div>
     <div class="quarto-category">linear-algebra</div>
-    <div class="quarto-category">numpy</div>
-    <div class="quarto-category">pytorch</div>
   </div>
   </div>
 
@@ -221,9 +219,9 @@ window.Quarto = {
 <h2 data-number="1" class="anchored" data-anchor-id="picking-up-where-we-left-off"><span class="header-section-number">1</span> Picking Up Where We Left Off</h2>
 <p><a href="https://madhavpr191221.github.io/transformers_for_perception/posts/self-attention-from-first-principles/index.html">Part 1</a> ended with self-attention almost fully derived — queries, keys, a similarity score, and a weighted average. Almost, because we left two things unfinished.</p>
 <p><strong>First, the softmax itself. </strong></p>
-<p>Machine learning practioners recognize softmax immediately. But, it turns out that the raw form of softmax needs a simple but non-trivial modification to make the computation numerically and statistically well-behaved. Rather than simply stating it as a fact, we will derive it from first principles with a simple numerical example to support the theory.</p>
+<p>Machine learning practitioners recognize softmax immediately. But, it turns out that the raw form of softmax needs a simple but non-trivial modification to make the computation numerically and statistically well-behaved. Rather than simply stating it as a fact, we will derive it from first principles with a simple numerical example to support the theory.</p>
 <p><strong>Second, the value vector.</strong></p>
-<p>We averaged raw patch vectors <span class="math inline">\(\mathbf{x}_m\)</span> throughout Part 1, and flagged at the end that real self-attention averages a separately learned projection instead. We deferred the construction intetionally. This post builds it.</p>
+<p>We averaged raw patch vectors <span class="math inline">\(\mathbf{x}_m\)</span> throughout Part 1, and flagged at the end that real self-attention averages a separately learned projection instead. We deferred the construction intentionally. This post builds it.</p>
 <p>Spoiler Alert: The value vector isn’t magical. It is just matrix-vector multiplication</p>
 <p><strong>Third, multi-head attention.</strong></p>
 <p>Third, we worked with one query and one key projection throughout. In practice, self-attention runs several different key and query projections in parallel. You can think about attaching different “importance scores” to each patch in different ways. This is called Multi-Head Attention and it is the last piece of the self-attention story.</p>
@@ -819,7 +817,7 @@ d_k\)</span>. The exact variance of the dot product is:</p>
 \text{Var}(\mathcal{Q}_{nj}) = 1\]</span></p>
 <p>So <span class="math inline">\(|[\Sigma_Q]_{ij}| \leq 1\)</span>, and similarly <span class="math inline">\(|[\Sigma_K]_{ij}| \leq 1\)</span>. Each off-diagonal covariance term lies in <span class="math inline">\([-1, 1]\)</span>. There are <span class="math inline">\(\binom{d_k}{2} = \frac{d_k(d_k-1)}{2}\)</span> such terms — in principle, the entire off-diagonal sum could dominate the <span class="math inline">\(d_k\)</span> term for large <span class="math inline">\(d_k\)</span>.</p>
 <p><span class="math display">\[\text{Var}(\mathcal{S}_{nm}) = d_k \quad \text{exactly}\]</span></p>
-<p>+<strong>Can we fix this?</strong> Yes — by whitening <span class="math inline">\(\mathbf{q}_n\)</span> and <span class="math inline">\(\mathbf{k}_m\)</span>, exactly as we whitened the data in Part 1. If <span class="math inline">\(\Sigma_Q = I\)</span>, then <span class="math inline">\([\Sigma_Q]_{ij} = 0\)</span> for all <span class="math inline">\(i \neq j\)</span>, and the covariance terms vanish exactly, giving <span class="math inline">\(\text{Var}(\mathcal{S}_{nm}) = d_k\)</span> precisely. Whether this is done in practice is a question for a later post.</p>
+<p><strong>Can we fix this?</strong> Yes — by whitening <span class="math inline">\(\mathbf{q}_n\)</span> and <span class="math inline">\(\mathbf{k}_m\)</span>, exactly as we whitened the data in Part 1. If <span class="math inline">\(\Sigma_Q = I\)</span>, then <span class="math inline">\([\Sigma_Q]_{ij} = 0\)</span> for all <span class="math inline">\(i \neq j\)</span>, and the covariance terms vanish exactly, giving <span class="math inline">\(\text{Var}(\mathcal{S}_{nm}) = d_k\)</span> precisely. Whether this is done in practice is a question for a later post.</p>
 <div class="callout callout-style-simple callout-note no-icon">
 <div class="callout-body d-flex">
 <div class="callout-icon-container">
@@ -1380,15 +1378,15 @@ Figure&nbsp;6: The Single-Head Scaled Dot Product Self-Attention Algorithm.
 <p>There is a shape issue that should not be left unsaid. In Part 1, we said that self-attention takes the patch matrix <span class="math inline">\(X \in \mathbb{R}^{N
 \times D}\)</span> and produces a richer matrix <span class="math inline">\(Y \in \mathbb{R}^{N \times D}\)</span> — same number of patches, same representation dimension. But the output of a single attention head does not automatically live in <span class="math inline">\(\mathbb{R}^{N \times D}\)</span>.</p>
 <p>We use a superscript <span class="math inline">\((h)\)</span> to denote quantities belonging to head <span class="math inline">\(h\)</span>, where <span class="math inline">\(h = 1, 2, \ldots, H\)</span>. Each head has its own projection matrices:</p>
-<p><span class="math display">\[W_Q^{(h)} \in \mathbb{R}^{D \times d_k}, \qquad
-W_K^{(h)} \in \mathbb{R}^{D \times d_k}, \qquad
-W_V^{(h)} \in \mathbb{R}^{D \times d_v}\]</span></p>
+<p><span class="math display">\[W_Q^{(h)} \in \mathbb{R}^{d_k \times D}, \qquad
+W_K^{(h)} \in \mathbb{R}^{d_k \times D}, \qquad
+W_V^{(h)} \in \mathbb{R}^{d_v \times D}\]</span></p>
 <p>and produces its own query, key, and value matrices:</p>
-<p><span class="math display">\[Q^{(h)} = XW_Q^{(h)} \in \mathbb{R}^{N \times d_k}, \qquad
-K^{(h)} = XW_K^{(h)} \in \mathbb{R}^{N \times d_k}, \qquad
-V^{(h)} = XW_V^{(h)} \in \mathbb{R}^{N \times d_v}\]</span></p>
+<p><span class="math display">\[Q^{(h)} = XW_Q^{(h)\top} \in \mathbb{R}^{N \times d_k}, \qquad
+K^{(h)} = XW_K^{(h)\top} \in \mathbb{R}^{N \times d_k}, \qquad
+V^{(h)} = XW_V^{(h)\top} \in \mathbb{R}^{N \times d_v}\]</span></p>
 <p>and its own attention output:</p>
-<p><span class="math display">\[Y^{(h)} = \text{softmax}\left(\frac{Q^{(h)}{K^{(h)}}^\top}
+<p><span class="math display">\[Y^{(h)} = \operatorname{softmax}_{\mathrm{row}}\left(\frac{Q^{(h)}{K^{(h)}}^\top}
 {\sqrt{d_k}}\right) V^{(h)} \in \mathbb{R}^{N \times d_v}\]</span></p>
 <p><strong>Step 1: Concatenate.</strong> The <span class="math inline">\(H\)</span> head outputs are concatenated column-wise — each <span class="math inline">\(Y^{(h)}\)</span> has <span class="math inline">\(N\)</span> rows, so we place their columns next to each other:</p>
 <p><span class="math display">\[Y_{\text{concat}} = \begin{bmatrix} Y^{(1)} &amp; Y^{(2)} &amp; \cdots &amp;
@@ -1438,8 +1436,8 @@ V.
 \]</span></p>
 <p>Once the parameters are learned, the same computation can produce meaningful attention patterns. But before learning, the heatmap is decoration.</p>
 <p>That immediately raises the real question: How are these parameters learned?</p>
-<p>That is where self-attention stops being just a matrix formula and becomes part of a neural network.</p>
-<p>In the next post, we will place self-attention inside a larger learnable block. We will bring in positional information, nonlinear activations, residual connections, layer normalization, and the machinery that allows gradients to shape <span class="math inline">\(W_Q\)</span>, <span class="math inline">\(W_K\)</span>, <span class="math inline">\(W_V\)</span>, and the rest of the model.</p>
+<p>That is where self-attention stops being just a matrix formula and becomes part of a larger learnable block.</p>
+<p>In the next post, we will place self-attention inside this block. We will bring in positional information, nonlinear activations, residual connections, layer normalization, and the machinery that allows gradients to shape <span class="math inline">\(W_Q\)</span>, <span class="math inline">\(W_K\)</span>, <span class="math inline">\(W_V\)</span>, and the rest of the model.</p>
 <p>For images, positional information is not a side detail. A patch also represents where it came from. And if you are familiar with positional encodings from language models, expect a different story here. This is self-attention from a vision first angle.</p>
 <p>Images have their own geometry. Gradient-based learning adjusts the matrices until the right patches start to matter. And only through this learned geometry does a boat patch know that nearby water matters.</p>
 </section>
@@ -1540,7 +1538,7 @@ Figure&nbsp;8: What’s Coming Next
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/madhavpr191221\.github\.io\/transformers_for_perception\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
