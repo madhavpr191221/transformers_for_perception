@@ -1378,15 +1378,15 @@ Figure&nbsp;6: The Single-Head Scaled Dot Product Self-Attention Algorithm.
 <p>There is a shape issue that should not be left unsaid. In Part 1, we said that self-attention takes the patch matrix <span class="math inline">\(X \in \mathbb{R}^{N
 \times D}\)</span> and produces a richer matrix <span class="math inline">\(Y \in \mathbb{R}^{N \times D}\)</span> — same number of patches, same representation dimension. But the output of a single attention head does not automatically live in <span class="math inline">\(\mathbb{R}^{N \times D}\)</span>.</p>
 <p>We use a superscript <span class="math inline">\((h)\)</span> to denote quantities belonging to head <span class="math inline">\(h\)</span>, where <span class="math inline">\(h = 1, 2, \ldots, H\)</span>. Each head has its own projection matrices:</p>
-<p><span class="math display">\[W_Q^{(h)} \in \mathbb{R}^{D \times d_k}, \qquad
-W_K^{(h)} \in \mathbb{R}^{D \times d_k}, \qquad
-W_V^{(h)} \in \mathbb{R}^{D \times d_v}\]</span></p>
+<p><span class="math display">\[W_Q^{(h)} \in \mathbb{R}^{d_k \times D}, \qquad
+W_K^{(h)} \in \mathbb{R}^{d_k \times D}, \qquad
+W_V^{(h)} \in \mathbb{R}^{d_v \times D}\]</span></p>
 <p>and produces its own query, key, and value matrices:</p>
-<p><span class="math display">\[Q^{(h)} = XW_Q^{(h)} \in \mathbb{R}^{N \times d_k}, \qquad
-K^{(h)} = XW_K^{(h)} \in \mathbb{R}^{N \times d_k}, \qquad
-V^{(h)} = XW_V^{(h)} \in \mathbb{R}^{N \times d_v}\]</span></p>
+<p><span class="math display">\[Q^{(h)} = XW_Q^{(h)\top} \in \mathbb{R}^{N \times d_k}, \qquad
+K^{(h)} = XW_K^{(h)\top} \in \mathbb{R}^{N \times d_k}, \qquad
+V^{(h)} = XW_V^{(h)\top} \in \mathbb{R}^{N \times d_v}\]</span></p>
 <p>and its own attention output:</p>
-<p><span class="math display">\[Y^{(h)} = \text{softmax}\left(\frac{Q^{(h)}{K^{(h)}}^\top}
+<p><span class="math display">\[Y^{(h)} = \operatorname{softmax}_{\mathrm{row}}\left(\frac{Q^{(h)}{K^{(h)}}^\top}
 {\sqrt{d_k}}\right) V^{(h)} \in \mathbb{R}^{N \times d_v}\]</span></p>
 <p><strong>Step 1: Concatenate.</strong> The <span class="math inline">\(H\)</span> head outputs are concatenated column-wise — each <span class="math inline">\(Y^{(h)}\)</span> has <span class="math inline">\(N\)</span> rows, so we place their columns next to each other:</p>
 <p><span class="math display">\[Y_{\text{concat}} = \begin{bmatrix} Y^{(1)} &amp; Y^{(2)} &amp; \cdots &amp;
